@@ -1,5 +1,3 @@
-
-# File looking at GI trials
 set.seed(5)
 libraries <- c(
   'zip', 'DescTools', 'svMisc', 'ggpubr', 'Hmisc', 'mice', 'glmnet', 
@@ -40,9 +38,8 @@ colnames(fdaaa_tracker_data) <- paste0('fdaaatracker_', fdaa_cols)
 # --------------------        load and organize data from Onc Labelers      --------------------------
 # -------------------------------------------------------------------------------------------------------- #
 
-prelim_table <- readRDS(file = file.path(data_directory, 'prelim_table.rds'))
-raw_onc_list <- prelim_table
-
+#Loading in prelim table 
+raw_onc_list <- readRDS(file = file.path(data_directory, 'prelim_table.rds'))
 
 #treatment columns
 cols_treatment <-
@@ -53,7 +50,6 @@ c(
 	'treatment_medicine',
 	'treatment_other'
 	)
-
 
 #behavior columns
 cols_behavior <-
@@ -66,7 +62,7 @@ c(
 	)
 
 #diease site columns
-cols_site <-
+cols_location <-
 c(
 	'site_lung',
 	'site_cns',
@@ -93,10 +89,10 @@ c(
 	'site_other'
 	)
 
-all_disease_cols <- c(cols_treatment, cols_behavior, cols_site)
+all_disease_cols <- c(cols_treatment, cols_behavior, cols_location)
 cols_treatment <- c(cols_treatment)
 cols_behavior <- c(cols_behavior)
-cols_site <- c(cols_site)
+cols_location <- c(cols_location)
 
 
 raw_onc_list <- raw_onc_list %>% #this takes the next argument and applies it to this one
@@ -130,9 +126,9 @@ raw_onc_list %>%
 # do some light processing
 raw_onc_list <-
   raw_onc_list %>%
-  mutate_at(vars(one_of(all_disease_cols)), function(x) !is.na(x)) # convert NA to FALSE for disease
+  mutate_at(vars(one_of(all_disease_cols)), function(x) !is.na(x)) # convert NA to FALSE for all columns
 
-# --------------------------        MERGE GI DATA WITH BIGTBL based on nct_ID      -----------------------------
+# --------------------------        MERGE ONC DATA WITH BIGTBL based on nct_ID      -----------------------------
 
 joined_df <- 
   left_join(raw_onc_list %>%
@@ -307,7 +303,7 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
   }
 
 
-  for (col in cols_site) {
+  for (col in cols_location) {
     full_onc_df <- full_onc_df %>% 
       mutate(!! rlang::sym(col) := as.logical(!! rlang::sym(col)))
   }
@@ -341,39 +337,45 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
       new_br_phase2 = fct_relevel(
         fct_explicit_na(br_phase2, na_level = 'Unknown Phase'), 'Phase 2'
       ),
-      primary_purpose = fct_relevel(primary_purpose, 'Treatment'),
-      new_primary_purpose_treatment = fct_collapse(
-        .f = primary_purpose, # should be able to use group_other here rather than use setdiff
-        Treatment = 'Treatment', 
-        Prevention = 'Prevention', 
-        `Basic Science` = 'Basic Science',  # but there is a known forcats bug right now
-        Other = setdiff(
-          primary_purpose, 
-          c("Treatment", "Prevention", "Basic Science")
-        ), 
-        group_other = FALSE
-      ),
+      #primary_purpose = fct_relevel(primary_purpose, 'Treatment'),
+      #new_primary_purpose_treatment = fct_collapse(
+      #  .f = primary_purpose, # should be able to use group_other here rather than use setdiff
+      #  Treatment = 'Treatment', 
+      #  Prevention = 'Prevention', 
+      #  `Basic Science` = 'Basic Science',  # but there is a known forcats bug right now
+      #  Other = setdiff(
+      #    primary_purpose, 
+      #    c("Treatment", "Prevention", "Basic Science")
+      #  ), 
+      #  group_other = FALSE
+      #),
       new_primary_purpose_treatment2 = fct_lump(primary_purpose, n = 3),
       new_actduration = Hmisc::cut2(actual_duration, c(0, 10, 20, 30, 40, 50, Inf)),
       br_masking2 = fct_relevel(br_masking2, 'None'),
-     
-      
-      single_disease_group = case_when(
-        num_disease_groups > 1 ~ 'multi_disease',
-        TRUE ~ single_disease_group
-      ),
-      num_site_group = pmap_dbl(
-        list(!!! rlang::syms(cols_site)),
-        function(...) sum(...)
-      ),
-      single_site_group = pmap_chr(
-        list(!!! rlang::syms(cols_site)),
-        function(...) paste0(cols_site[which(x = c(...))], collapse = ',')
-      ),
-      single_site_group = case_when(
-        num_location_group > 1 ~ 'multi_location',
-        TRUE ~ single_location_group
-      ),
+      #num_disease_groups = pmap_dbl(
+      #  list(!!! rlang::syms(cols_disease)),
+      #  function(...) sum(...)
+      #),
+      #single_disease_group = pmap_chr(
+      #  list(!!! rlang::syms(cols_disease)),
+      #  function(...) paste0(cols_disease[which(x = c(...))], collapse = ',')
+      #),
+      #single_disease_group = case_when(
+      #  num_disease_groups > 1 ~ 'multi_disease',
+      #  TRUE ~ single_disease_group
+      #),
+      #num_location_group = pmap_dbl(
+      #  list(!!! rlang::syms(cols_location)),
+      #  function(...) sum(...)
+      #),
+      #single_location_group = pmap_chr(
+      #  list(!!! rlang::syms(cols_location)),
+      #  function(...) paste0(cols_location[which(x = c(...))], collapse = ',')
+      #),
+      #single_location_group = case_when(
+      #  num_location_group > 1 ~ 'multi_location',
+      #  TRUE ~ single_location_group
+      #),
       br_singleregion4 = fct_collapse(
         .f = br_singleregion,
         NorthAmerica = 'NorthAmerica', 
@@ -445,9 +447,9 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
       number_of_regions = 1 + str_count(all_regions, ";"),
       new_num_countries = Hmisc::cut2(num_countries, c(1, 2, 3, Inf)),
       year_trial = year(study_first_submitted_date),
-      all_other_disease = !infection_any & !neoplasia_disease & 
-	        !infection_helminth & !infection_intestines & 
-	        !infection_hepatitis & !neoplasia_primary & !neoplasia_metastasis		    
+#      all_other_disease = !infection_any & !neoplasia_disease & 
+#	        !infection_helminth & !infection_intestines & 
+#	        !infection_hepatitis & !neoplasia_primary & !neoplasia_metastasis		    
     ) %>%
     left_join(fdaaa_tracker_data,
               by = c('nct_id' = 'fdaaatracker_registry_id'))
@@ -456,8 +458,6 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
 }
 
 full_onc_df <- add_additional_columns(joined_df)
-
-
 
 # -------------------------------------------------------------------------#
 # ---------                 CLEANING UP STOPS HERE                 -------------
