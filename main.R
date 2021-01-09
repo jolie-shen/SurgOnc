@@ -811,7 +811,6 @@ ts_table_surg <- rbind(
 #MULTIPLE IMPUTATION
            
 #######################################
-
 # Set factor variables
 micedata <- joined_df %>%
     select(
@@ -852,9 +851,11 @@ init <- mice(micedata, maxit = 0, m = 1)
 methods <- init$method
 predM <- init$predictorMatrix
 
-# For dichotomous variables, use logistic regression predictors, and for
-# categorical variables, use polytonomous regression
+# For categorical variables, use polytonomous regression
+# For dichotomous variables, use logistic regression predictors
 # For continuous variables, use predictive mean matching by default 
+
+#categorical
 methods[c(
   "industry_any2b", 
   "br_phase4", 
@@ -866,49 +867,46 @@ methods[c(
   "br_studystatus", 
   "phase")] = "polyreg"
 
+#dichotomous
 methods[c(
   "br_allocation",
   "has_dmc", 
   "enrollment_type",  
   "were_results_reported", 
-  "infection_any",
-  "infection_helminth",
-  "infection_intestines",
-  "infection_hepatitis",
-  "neoplasia_primary",
-  "neoplasia_metastasis",
-  "neoplasia_disease",
-  "abdominal_hernia",
-  "appendicitis",
-  "cirrhosis",
-  "diverticular_disease",
-  "fecal_diversion",
-  "functional_disorder",
-  "gallstones",
-  "gerd",
-  "hemorrhoids",
-  "hypoxic",
-  "ileus",
-  "ibd", 
-  "malabsorptive",
-  "motility",
-  "nafld_nash",
-  "nonspecific",
-  "pancreatitis",
-  "transplant",
-  "ulcerative_disease",
-  "other",
-  "location_esophagus",
-  "location_stomach",
-  "location_small_intestine",
-  "location_colon_rectum",
-  "location_anus",
-  "location_liver",
-  "location_biliarytract",
-  "location_gallbladder",
-  "location_pancreas",
-  "location_peritoneum",
-  "location_notspecified")] = "logreg" 
+
+  "treatment_xrt",       
+  "treatment_surg",      
+  "treatment_invasive", 
+  "treatment_medicine", 
+  "treatment_other",     
+  "behavior_benign",     
+  "behavior_uncertain",  
+  "behavior_insitu",    
+  "behavior_malignant",  
+  "behavior_metastatic", 
+  "site_lung",           
+  "site_cns",            
+  "site_heme",          
+  "site_melanoma",       
+  "site_thyroid",        
+  "site_bone",           
+  "site_headneck",       
+  "site_softtissue",    
+  "site_colorectal",     
+  "site_anus",           
+  "site_stomach",        
+  "site_liver",          
+  "site_pancreas",      
+  "site_esophagus",      
+  "site_breast",     
+  "site_cervix",         
+  "site_ovary",          
+  "site_vulva",         
+  "site_prostate",       
+  "site_testicle",       
+  "site_kidney",         
+  "site_bladder",        
+  "site_other")] = "logreg" 
 
 methods[c(
   "number_of_arms", 
