@@ -1,7 +1,7 @@
 set.seed(5)
 libraries <- c(
   'zip', 'DescTools', 'svMisc', 'ggpubr', 'Hmisc', 'mice', 'glmnet', 
-  'tidyverse', 'RefManageR', 'DT', 'lubridate', 'ggplot2', 'openxlsx', 
+  'tidyverse', 'RefManageR', 'DT', 'lubridate', 'ggplot2', 
   'survminer', 'Kendall', 'coin', 'dplyr', 'viridis'
 )
 
