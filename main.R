@@ -351,18 +351,6 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
       new_primary_purpose_treatment2 = fct_lump(primary_purpose, n = 3),
       new_actduration = Hmisc::cut2(actual_duration, c(0, 10, 20, 30, 40, 50, Inf)),
       br_masking2 = fct_relevel(br_masking2, 'None'),
-      num_disease_groups = pmap_dbl(
-        list(!!! rlang::syms(cols_disease)),
-        function(...) sum(...)
-      ),
-      single_disease_group = pmap_chr(
-        list(!!! rlang::syms(cols_disease)),
-        function(...) paste0(cols_disease[which(x = c(...))], collapse = ',')
-      ),
-      single_disease_group = case_when(
-        num_disease_groups > 1 ~ 'multi_disease',
-        TRUE ~ single_disease_group
-      ),
       num_location_group = pmap_dbl(
         list(!!! rlang::syms(cols_location)),
         function(...) sum(...)
