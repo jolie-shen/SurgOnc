@@ -120,7 +120,9 @@ raw_onc_list %>%
   unname() %>% 
   unique()
 
+#RAW_ONC_LIST$TREATMENT_SURG N = 1721
 # --------------------------        MERGE ONC DATA WITH BIGTBL based on nct_ID      -----------------------------
+
 
 joined_df <- 
   left_join(raw_onc_list %>%
@@ -128,6 +130,8 @@ joined_df <-
               select(one_of(c('nct_id','labeler_id', all_disease_cols))),
             Bigtbl,
             by = 'nct_id')
+
+#JOINED_DF$TREATMENT_SURG N = 1694 after removing Treatment_surg = r, n, NA
 
 joined_df <- joined_df %>%
   mutate(
@@ -209,9 +213,9 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
   #Oct 24 2019
 
   # -------------------------------------------#
-  # filter out interventional and stuff before May 1 2018 or after Oct 1 2007 - MARIJA to find out what this is 
+  # filter out interventional and stuff before January 1 2020 or after Oct 1 2007 
           # 10/1/2007 - the date clinical trials mandated to be put in
-          # 5/1/2018 arbitrary for neuroanalysis
+       
   early_date <- '20071001'
   late_date <- '20200101'
   full_onc_df <- 
@@ -439,6 +443,8 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
 
 full_onc_df <- add_additional_columns(joined_df)
 
+#FULL_ONC_DF$TREATMENT_SURG N = 1661 after taking out interventional and stuff before January 1 2020 or after Oct 1 2007
+	   
 #Subset of Full_onc_df that only includes surgical oncology trials	      
 surg_onc_df <- as.data.frame(full_onc_df) %>% filter(treatment_surg == TRUE)
 # -------------------------------------------------------------------------#
