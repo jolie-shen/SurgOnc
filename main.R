@@ -447,6 +447,7 @@ full_onc_df <- add_additional_columns(joined_df)
 # ---------                JOLIES ANALYSIS                -------------
 # -------------------------------------------------------------------------#
 
+
 ####################################
 
 # FREQUENCY TABLES and CHI-SQUARE ANALYSIS					       
@@ -551,9 +552,15 @@ do_table_analysis <- function(df, cols) {
   }))
 
 
-  sites <- do.call(rbind, lapply(cols_site, function(i) {
+  behaviors <- do.call(rbind, lapply(cols_behavior, function(i) {
     get_freq_table(i, df, i, cols)
   }))
+
+
+  locations <- do.call(rbind, lapply(cols_location, function(i) {
+    get_freq_table(i, df, i, cols)
+  }))
+
 
   total <- rbind(
     pp,
@@ -575,8 +582,8 @@ do_table_analysis <- function(df, cols) {
     study_status,
     hmic_vs_lmic,
     treatments,
-    diseases,
-    sites
+    behaviors,
+    locations
   )
 
   return(total)
@@ -585,14 +592,17 @@ do_table_analysis <- function(df, cols) {
 
 #------TABLE 1 SIMILAR TO OPHTHO TRIAL------# 
 #-----STRATIFIED BY YEAR USING BIN--------#                    
-table1 <- do_table_analysis(full_onc_df, "bintime")
+tableBintime <- do_table_analysis(full_onc_df, "bintime")
 
 #------TABLE 2 SIMILAR TO OPHTHO TRIAL------# 
 #-----STRATIFIED BY SPONSORSHIP--------#        
-table2 <- do_table_analysis(full_onc_df, "industry_any2b")            
+tableIndustry <- do_table_analysis(full_onc_df, "industry_any2b")            
 
-#-------UNIVARIATE ANALYSIS--------#  
-table3 <- do_table_analysis(full_onc_df, "early_discontinuation")
+#-------UNIVARIATE ANALYSIS FOR EARLY DISCONTINUATION--------#  
+tableED <- do_table_analysis(full_onc_df, "early_discontinuation")
+
+#------ TABLE 4 STRATIFIED BY SURG ONC-------#
+tableSurg <- do_table_analysis(full_onc_df, "treatment_surg")
 
 
 ######################
@@ -1436,9 +1446,10 @@ joined <- full_join(cox_results, lasso_cox_results, by = "name", suffix = c(".fu
 
 
 #########
-View(table1)
-View(table2)
-View(table3)
+View(tableBintime)
+View(tableIndustry)
+View(tableED)
+View(tableSurg)
 View(ts_table)
 View(results_reported)
 View(early_disc)
