@@ -122,10 +122,10 @@ raw_onc_list %>%
 
 # in onc case, there are only are "TRUE" and "FALSE" using the rds file, even though the excel file as "1" and "NA"
 
-# do some light processing, this does NOT need to be done for onc case
-#raw_onc_list <-
-#  raw_onc_list %>%
-#  mutate_at(vars(one_of(all_disease_cols)), function(x) !is.na(x)) # convert NA to FALSE for all columns
+# do some light processing
+raw_onc_list <-
+  raw_onc_list %>%
+  mutate_at(vars(one_of(all_disease_cols)), function(x) !is.na(x)) # convert NA to FALSE for all columns
 
 # --------------------------        MERGE ONC DATA WITH BIGTBL based on nct_ID      -----------------------------
 
@@ -336,45 +336,45 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
       new_br_phase2 = fct_relevel(
         fct_explicit_na(br_phase2, na_level = 'Unknown Phase'), 'Phase 2'
       ),
-      #primary_purpose = fct_relevel(primary_purpose, 'Treatment'),
-      #new_primary_purpose_treatment = fct_collapse(
-      #  .f = primary_purpose, # should be able to use group_other here rather than use setdiff
-      #  Treatment = 'Treatment', 
-      #  Prevention = 'Prevention', 
-      #  `Basic Science` = 'Basic Science',  # but there is a known forcats bug right now
-      #  Other = setdiff(
-      #    primary_purpose, 
-      #    c("Treatment", "Prevention", "Basic Science")
-      #  ), 
-      #  group_other = FALSE
-      #),
+      primary_purpose = fct_relevel(primary_purpose, 'Treatment'),
+      new_primary_purpose_treatment = fct_collapse(
+        .f = primary_purpose, # should be able to use group_other here rather than use setdiff
+        Treatment = 'Treatment', 
+        Prevention = 'Prevention', 
+        `Basic Science` = 'Basic Science',  # but there is a known forcats bug right now
+        Other = setdiff(
+          primary_purpose, 
+          c("Treatment", "Prevention", "Basic Science")
+        ), 
+        group_other = FALSE
+      ),
       new_primary_purpose_treatment2 = fct_lump(primary_purpose, n = 3),
       new_actduration = Hmisc::cut2(actual_duration, c(0, 10, 20, 30, 40, 50, Inf)),
       br_masking2 = fct_relevel(br_masking2, 'None'),
-      #num_disease_groups = pmap_dbl(
-      #  list(!!! rlang::syms(cols_disease)),
-      #  function(...) sum(...)
-      #),
-      #single_disease_group = pmap_chr(
-      #  list(!!! rlang::syms(cols_disease)),
-      #  function(...) paste0(cols_disease[which(x = c(...))], collapse = ',')
-      #),
-      #single_disease_group = case_when(
-      #  num_disease_groups > 1 ~ 'multi_disease',
-      #  TRUE ~ single_disease_group
-      #),
-      #num_location_group = pmap_dbl(
-      #  list(!!! rlang::syms(cols_location)),
-      #  function(...) sum(...)
-      #),
-      #single_location_group = pmap_chr(
-      #  list(!!! rlang::syms(cols_location)),
-      #  function(...) paste0(cols_location[which(x = c(...))], collapse = ',')
-      #),
-      #single_location_group = case_when(
-      #  num_location_group > 1 ~ 'multi_location',
-      #  TRUE ~ single_location_group
-      #),
+      num_disease_groups = pmap_dbl(
+        list(!!! rlang::syms(cols_disease)),
+        function(...) sum(...)
+      ),
+      single_disease_group = pmap_chr(
+        list(!!! rlang::syms(cols_disease)),
+        function(...) paste0(cols_disease[which(x = c(...))], collapse = ',')
+      ),
+      single_disease_group = case_when(
+        num_disease_groups > 1 ~ 'multi_disease',
+        TRUE ~ single_disease_group
+      ),
+      num_location_group = pmap_dbl(
+        list(!!! rlang::syms(cols_location)),
+        function(...) sum(...)
+      ),
+      single_location_group = pmap_chr(
+        list(!!! rlang::syms(cols_location)),
+        function(...) paste0(cols_location[which(x = c(...))], collapse = ',')
+      ),
+      single_location_group = case_when(
+        num_location_group > 1 ~ 'multi_location',
+        TRUE ~ single_location_group
+      ),
       br_singleregion4 = fct_collapse(
         .f = br_singleregion,
         NorthAmerica = 'NorthAmerica', 
