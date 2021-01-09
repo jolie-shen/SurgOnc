@@ -769,8 +769,10 @@ do_time_series_analysis <- function(classification, input, num_comparisons, non_
 }
 
 # Do we want to do these with multiple imputation?
+		 
+#All oncology trials		 
 num_comparisons <- 40
-ts_table <- rbind(
+ts_table_all <- rbind(
   do_time_series_analysis("total", full_onc_df %>% select(year_trial) %>% mutate(dummy = TRUE), num_comparisons),
   do_time_series_analysis("purpose", full_onc_df, num_comparisons, "new_primary_purpose_treatment"),
   do_time_series_analysis("industry", full_onc_df, num_comparisons, "industry_any2b"),
@@ -785,6 +787,24 @@ ts_table <- rbind(
   do_time_series_analysis("br_gni_lmic_hic_only", full_onc_df, num_comparisons, "br_gni_lmic_hic_only"),
   do_time_series_analysis("disease_locations", full_onc_df %>% select(year_trial, all_of(cols_location)), num_comparisons)
 )
+
+#surgical oncology trialas only
+ts_table_surg <- rbind(
+  do_time_series_analysis("total", surg_onc_df %>% select(year_trial) %>% mutate(dummy = TRUE), num_comparisons),
+  do_time_series_analysis("purpose", surg_onc_df, num_comparisons, "new_primary_purpose_treatment"),
+  do_time_series_analysis("industry", surg_onc_df, num_comparisons, "industry_any2b"),
+  do_time_series_analysis("region", surg_onc_df %>% select(year_trial, NorthAmerica, Europe, EastAsia, neither3regions), num_comparisons),
+  do_time_series_analysis("br_gni_hic", surg_onc_df, num_comparisons, "br_gni_hic"),
+  do_time_series_analysis("early_discontinuation", surg_onc_df, num_comparisons, "early_discontinuation"),
+  do_time_series_analysis("randomization", surg_onc_df, num_comparisons, "br_allocation"),
+  do_time_series_analysis("masking", surg_onc_df, num_comparisons, "br_masking2"),
+  do_time_series_analysis("DMC", surg_onc_df, num_comparisons, "has_dmc"),
+  do_time_series_analysis("enrollment_type", surg_onc_df, num_comparisons, "enrollment_type"),
+  do_time_series_analysis("reported", surg_onc_df, num_comparisons, "were_results_reported"),
+  do_time_series_analysis("br_gni_lmic_hic_only", surg_onc_df, num_comparisons, "br_gni_lmic_hic_only"),
+  do_time_series_analysis("disease_locations", surg_onc_df %>% select(year_trial, all_of(cols_location)), num_comparisons)
+)
+		 
 
 #######################################
            
