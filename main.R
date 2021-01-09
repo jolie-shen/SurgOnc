@@ -782,9 +782,8 @@ ts_table <- rbind(
   do_time_series_analysis("DMC", full_onc_df, num_comparisons, "has_dmc"),
   do_time_series_analysis("enrollment_type", full_onc_df, num_comparisons, "enrollment_type"),
   do_time_series_analysis("reported", full_onc_df, num_comparisons, "were_results_reported"),
-  do_time_series_analysis("infection_any", full_onc_df, num_comparisons, "infection_any"),
   do_time_series_analysis("br_gni_lmic_hic_only", full_onc_df, num_comparisons, "br_gni_lmic_hic_only"),
-  do_time_series_analysis("disease_site", full_onc_df %>% select(year_trial, all_of(cols_site)), num_comparisons)
+  do_time_series_analysis("disease_locations", full_onc_df %>% select(year_trial, all_of(cols_location)), num_comparisons)
 )
 
 #######################################
