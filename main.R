@@ -120,13 +120,6 @@ raw_onc_list %>%
   unname() %>% 
   unique()
 
-# in onc case, there are only are "TRUE" and "FALSE" using the rds file, even though the excel file as "1" and "NA"
-
-# do some light processing
-raw_onc_list <-
-  raw_onc_list %>%
-  mutate_at(vars(one_of(all_disease_cols)), function(x) !is.na(x)) # convert NA to FALSE for all columns
-
 # --------------------------        MERGE ONC DATA WITH BIGTBL based on nct_ID      -----------------------------
 
 joined_df <- 
