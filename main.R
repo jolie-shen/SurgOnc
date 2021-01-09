@@ -592,17 +592,19 @@ do_table_analysis <- function(df, cols) {
 }
 
 
-#------TABLE 1 SIMILAR TO OPHTHO TRIAL------# 
-#-----STRATIFIED BY YEAR USING BIN--------#                    
-tableBintime <- do_table_analysis(full_onc_df, "bintime")
+#-----STRATIFIED BY YEAR USING BINTIME --------#                    
+tableBintimeAll <- do_table_analysis(full_onc_df, "bintime")
+tableBintimeSurg <- do_table_analysis(surg_onc_df, "bintime")
+	      
 
-#------TABLE 2 SIMILAR TO OPHTHO TRIAL------# 
 #-----STRATIFIED BY SPONSORSHIP--------#        
-tableIndustry <- do_table_analysis(full_onc_df, "industry_any2b")            
-
+tableIndustryAll <- do_table_analysis(full_onc_df, "industry_any2b")            
+tableIndustrySurg <- do_table_analysis(surg_onc_df, "industry_any2b") 
+	      
 #-------UNIVARIATE ANALYSIS FOR EARLY DISCONTINUATION--------#  
-tableED <- do_table_analysis(full_onc_df, "early_discontinuation")
-
+tableEDAll <- do_table_analysis(full_onc_df, "early_discontinuation")
+tableEDSurg <- do_table_analysis(full_onc_df, "early_discontinuation")
+	      
 #------ TABLE 4 STRATIFIED BY SURG ONC-------#
 tableSurg <- do_table_analysis(full_onc_df, "treatment_surg")
 
