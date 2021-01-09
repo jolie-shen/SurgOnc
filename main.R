@@ -439,6 +439,8 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
 
 full_onc_df <- add_additional_columns(joined_df)
 
+#Subset of Full_onc_df that only includes surgical oncology trials	      
+surg_onc_df <- as.data.frame(full_onc_df) %>% filter(treatment_surg == TRUE)
 # -------------------------------------------------------------------------#
 # ---------                 CLEANING UP STOPS HERE                 -------------
 # -------------------------------------------------------------------------#
