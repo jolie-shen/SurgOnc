@@ -1167,6 +1167,8 @@ save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Sur
 
 
 
+
+
 ############################
 #LOGISTIC REGRESSION
 
@@ -1186,56 +1188,39 @@ do_logistic <- function(output_variable, imputed) {
     has_dmc +
     br_gni_lmic_hic +
     num_facilities +
-    infection_any +
-    infection_helminth +
-    infection_intestines +
-    infection_hepatitis +
-    neoplasia_primary +
-    neoplasia_metastasis +
-    neoplasia_disease +
-    abdominal_hernia +
-    appendicitis +
-    cirrhosis +
-    diverticular_disease +
-    fecal_diversion +
-    br_singleregion4 +
-    functional_disorder +
-    gallstones +
-    gerd +
-    hemorrhoids +
-    hypoxic +
-    ileus +
-    ibd +
-    malabsorptive +
-    motility +
-    nafld_nash +
-    nonspecific +
-    pancreatitis +
-    transplant +
-    ulcerative_disease +
-    other +
-    location_esophagus +
-    location_stomach +
-    location_small_intestine +
-    location_colon_rectum +
-    location_anus +
-    location_liver +
-    location_biliarytract +
-    location_gallbladder +
-    location_pancreas +
-    location_peritoneum +
-    location_notspecified +
-    interv_drug +
-    interv_other +
-    interv_device +
-    interv_procedure +
-    interv_behavioral +
-    interv_biological +
-    interv_dietary +
-    interv_radiation  +
-    interv_diagnostic  +
-    interv_genetic  +
-    interv_combination"))
+    treatment_xrt +
+    treatment_surg +
+    treatment_invasive +
+    treatment_medicine +
+    treatment_other +
+    behavior_benign +
+    behavior_uncertain +
+    behavior_insitu +
+    behavior_malignant +
+    behavior_metastatic +
+    site_lung +
+    site_cns +
+    site_heme +
+    site_melanoma +
+    site_thyroid +
+    site_bone +
+    site_headneck +
+    site_softtissue +
+    site_colorectal +
+    site_anus +
+    site_stomach +
+    site_liver +
+    site_pancreas +
+    site_esophagus +
+    site_breast +
+    site_cervix +
+    site_ovary +
+    site_vulva +
+    site_prostate +
+    site_testicle +
+    site_kidney +
+    site_bladder +
+    site_other"))
 
   output <- imputed %>% 
     mice::complete("all") %>%
@@ -1263,7 +1248,6 @@ do_logistic <- function(output_variable, imputed) {
 
 results_reported <- do_logistic("br_were_results_reported_within_1year", imputed)
 early_disc <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
-		 
 		 
 ###########
 
