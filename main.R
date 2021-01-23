@@ -1231,7 +1231,8 @@ do_logistic <- function(output_variable, imputed) {
     lapply(function(i) {
       add_additional_columns(i, TRUE) %>% 
         filter(br_trialduration > 0) %>%
-        filter(!is.na(!! rlang::sym(output_variable)))
+        filter(!is.na(!! rlang::sym(output_variable))) %>%
+        filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
     }) %>%
     lapply(glm, formula = fmla, family = binomial(link = logit)) %>%
     pool()
