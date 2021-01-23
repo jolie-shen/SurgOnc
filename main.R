@@ -339,11 +339,7 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
         Treatment = 'Treatment', 
         Prevention = 'Prevention', 
         `Basic Science` = 'Basic Science',  # but there is a known forcats bug right now
-        Other = setdiff(
-          primary_purpose, 
-          c("Treatment", "Prevention", "Basic Science")
-        ), 
-        group_other = FALSE
+        other_level	= 'Other'
       ),
       new_primary_purpose_treatment2 = fct_lump(primary_purpose, n = 3),
       new_actduration = Hmisc::cut2(actual_duration, c(0, 10, 20, 30, 40, 50, Inf)),
