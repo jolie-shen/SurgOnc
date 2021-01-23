@@ -1,7 +1,7 @@
 set.seed(5)
 libraries <- c(
   'zip', 'DescTools', 'svMisc', 'ggpubr', 'Hmisc', 'mice', 'glmnet', 
-  'tidyverse', 'RefManageR', 'DT', 'lubridate', 'ggplot2', 'openxlsx', 
+  'tidyverse', 'RefManageR', 'DT', 'lubridate', 'ggplot2', 
   'survminer', 'Kendall', 'coin', 'dplyr', 'viridis'
 )
 
@@ -120,7 +120,9 @@ raw_onc_list %>%
   unname() %>% 
   unique()
 
+#RAW_ONC_LIST$TREATMENT_SURG N = 1721
 # --------------------------        MERGE ONC DATA WITH BIGTBL based on nct_ID      -----------------------------
+
 
 joined_df <- 
   left_join(raw_onc_list %>%
@@ -128,6 +130,8 @@ joined_df <-
               select(one_of(c('nct_id','labeler_id', all_disease_cols))),
             Bigtbl,
             by = 'nct_id')
+
+#JOINED_DF$TREATMENT_SURG N = 1694 after removing Treatment_surg = r, n, NA
 
 joined_df <- joined_df %>%
   mutate(
@@ -209,9 +213,9 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
   #Oct 24 2019
 
   # -------------------------------------------#
-  # filter out interventional and stuff before May 1 2018 or after Oct 1 2007 - MARIJA to find out what this is 
+  # filter out interventional and stuff before January 1 2020 or after Oct 1 2007 
           # 10/1/2007 - the date clinical trials mandated to be put in
-          # 5/1/2018 arbitrary for neuroanalysis
+       
   early_date <- '20071001'
   late_date <- '20200101'
   full_onc_df <- 
@@ -439,6 +443,10 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
 
 full_onc_df <- add_additional_columns(joined_df)
 
+#FULL_ONC_DF$TREATMENT_SURG N = 1661 after taking out interventional and stuff before January 1 2020 or after Oct 1 2007
+	   
+#Subset of Full_onc_df that only includes surgical oncology trials	      
+surg_onc_df <- as.data.frame(full_onc_df) %>% filter(treatment_surg == TRUE)
 # -------------------------------------------------------------------------#
 # ---------                 CLEANING UP STOPS HERE                 -------------
 # -------------------------------------------------------------------------#
@@ -446,6 +454,7 @@ full_onc_df <- add_additional_columns(joined_df)
 # -------------------------------------------------------------------------#
 # ---------                JOLIES ANALYSIS                -------------
 # -------------------------------------------------------------------------#
+
 
 ####################################
 
@@ -551,9 +560,15 @@ do_table_analysis <- function(df, cols) {
   }))
 
 
-  sites <- do.call(rbind, lapply(cols_site, function(i) {
+  behaviors <- do.call(rbind, lapply(cols_behavior, function(i) {
     get_freq_table(i, df, i, cols)
   }))
+
+
+  locations <- do.call(rbind, lapply(cols_location, function(i) {
+    get_freq_table(i, df, i, cols)
+  }))
+
 
   total <- rbind(
     pp,
@@ -575,24 +590,29 @@ do_table_analysis <- function(df, cols) {
     study_status,
     hmic_vs_lmic,
     treatments,
-    diseases,
-    sites
+    behaviors,
+    locations
   )
 
   return(total)
 }
 
 
-#------TABLE 1 SIMILAR TO OPHTHO TRIAL------# 
-#-----STRATIFIED BY YEAR USING BIN--------#                    
-table1 <- do_table_analysis(full_onc_df, "bintime")
+#-----STRATIFIED BY YEAR USING BINTIME --------#                    
+tableBintimeAll <- do_table_analysis(full_onc_df, "bintime")
+tableBintimeSurg <- do_table_analysis(surg_onc_df, "bintime")
+	      
 
-#------TABLE 2 SIMILAR TO OPHTHO TRIAL------# 
 #-----STRATIFIED BY SPONSORSHIP--------#        
-table2 <- do_table_analysis(full_onc_df, "industry_any2b")            
-
-#-------UNIVARIATE ANALYSIS--------#  
-table3 <- do_table_analysis(full_onc_df, "early_discontinuation")
+tableIndustryAll <- do_table_analysis(full_onc_df, "industry_any2b")            
+tableIndustrySurg <- do_table_analysis(surg_onc_df, "industry_any2b") 
+	      
+#-------UNIVARIATE ANALYSIS FOR EARLY DISCONTINUATION--------#  
+tableEDAll <- do_table_analysis(full_onc_df, "early_discontinuation")
+tableEDSurg <- do_table_analysis(full_onc_df, "early_discontinuation")
+	      
+#------ TABLE 4 STRATIFIED BY SURG ONC-------#
+tableSurg <- do_table_analysis(full_onc_df, "treatment_surg")
 
 
 ######################
@@ -749,8 +769,10 @@ do_time_series_analysis <- function(classification, input, num_comparisons, non_
 }
 
 # Do we want to do these with multiple imputation?
+		 
+#All oncology trials		 
 num_comparisons <- 40
-ts_table <- rbind(
+ts_table_all <- rbind(
   do_time_series_analysis("total", full_onc_df %>% select(year_trial) %>% mutate(dummy = TRUE), num_comparisons),
   do_time_series_analysis("purpose", full_onc_df, num_comparisons, "new_primary_purpose_treatment"),
   do_time_series_analysis("industry", full_onc_df, num_comparisons, "industry_any2b"),
@@ -762,17 +784,33 @@ ts_table <- rbind(
   do_time_series_analysis("DMC", full_onc_df, num_comparisons, "has_dmc"),
   do_time_series_analysis("enrollment_type", full_onc_df, num_comparisons, "enrollment_type"),
   do_time_series_analysis("reported", full_onc_df, num_comparisons, "were_results_reported"),
-  do_time_series_analysis("infection_any", full_onc_df, num_comparisons, "infection_any"),
   do_time_series_analysis("br_gni_lmic_hic_only", full_onc_df, num_comparisons, "br_gni_lmic_hic_only"),
-  do_time_series_analysis("disease_site", full_onc_df %>% select(year_trial, all_of(cols_site)), num_comparisons)
+  do_time_series_analysis("disease_locations", full_onc_df %>% select(year_trial, all_of(cols_location)), num_comparisons)
 )
+
+#surgical oncology trialas only
+ts_table_surg <- rbind(
+  do_time_series_analysis("total", surg_onc_df %>% select(year_trial) %>% mutate(dummy = TRUE), num_comparisons),
+  do_time_series_analysis("purpose", surg_onc_df, num_comparisons, "new_primary_purpose_treatment"),
+  do_time_series_analysis("industry", surg_onc_df, num_comparisons, "industry_any2b"),
+  do_time_series_analysis("region", surg_onc_df %>% select(year_trial, NorthAmerica, Europe, EastAsia, neither3regions), num_comparisons),
+  do_time_series_analysis("br_gni_hic", surg_onc_df, num_comparisons, "br_gni_hic"),
+  do_time_series_analysis("early_discontinuation", surg_onc_df, num_comparisons, "early_discontinuation"),
+  do_time_series_analysis("randomization", surg_onc_df, num_comparisons, "br_allocation"),
+  do_time_series_analysis("masking", surg_onc_df, num_comparisons, "br_masking2"),
+  do_time_series_analysis("DMC", surg_onc_df, num_comparisons, "has_dmc"),
+  do_time_series_analysis("enrollment_type", surg_onc_df, num_comparisons, "enrollment_type"),
+  do_time_series_analysis("reported", surg_onc_df, num_comparisons, "were_results_reported"),
+  do_time_series_analysis("br_gni_lmic_hic_only", surg_onc_df, num_comparisons, "br_gni_lmic_hic_only"),
+  do_time_series_analysis("disease_locations", surg_onc_df %>% select(year_trial, all_of(cols_location)), num_comparisons)
+)
+		 
 
 #######################################
            
 #MULTIPLE IMPUTATION
            
 #######################################
-
 # Set factor variables
 micedata <- joined_df %>%
     select(
@@ -813,9 +851,11 @@ init <- mice(micedata, maxit = 0, m = 1)
 methods <- init$method
 predM <- init$predictorMatrix
 
-# For dichotomous variables, use logistic regression predictors, and for
-# categorical variables, use polytonomous regression
+# For categorical variables, use polytonomous regression
+# For dichotomous variables, use logistic regression predictors
 # For continuous variables, use predictive mean matching by default 
+
+#categorical
 methods[c(
   "industry_any2b", 
   "br_phase4", 
@@ -827,49 +867,46 @@ methods[c(
   "br_studystatus", 
   "phase")] = "polyreg"
 
+#dichotomous
 methods[c(
   "br_allocation",
   "has_dmc", 
   "enrollment_type",  
   "were_results_reported", 
-  "infection_any",
-  "infection_helminth",
-  "infection_intestines",
-  "infection_hepatitis",
-  "neoplasia_primary",
-  "neoplasia_metastasis",
-  "neoplasia_disease",
-  "abdominal_hernia",
-  "appendicitis",
-  "cirrhosis",
-  "diverticular_disease",
-  "fecal_diversion",
-  "functional_disorder",
-  "gallstones",
-  "gerd",
-  "hemorrhoids",
-  "hypoxic",
-  "ileus",
-  "ibd", 
-  "malabsorptive",
-  "motility",
-  "nafld_nash",
-  "nonspecific",
-  "pancreatitis",
-  "transplant",
-  "ulcerative_disease",
-  "other",
-  "location_esophagus",
-  "location_stomach",
-  "location_small_intestine",
-  "location_colon_rectum",
-  "location_anus",
-  "location_liver",
-  "location_biliarytract",
-  "location_gallbladder",
-  "location_pancreas",
-  "location_peritoneum",
-  "location_notspecified")] = "logreg" 
+
+  "treatment_xrt",       
+  "treatment_surg",      
+  "treatment_invasive", 
+  "treatment_medicine", 
+  "treatment_other",     
+  "behavior_benign",     
+  "behavior_uncertain",  
+  "behavior_insitu",    
+  "behavior_malignant",  
+  "behavior_metastatic", 
+  "site_lung",           
+  "site_cns",            
+  "site_heme",          
+  "site_melanoma",       
+  "site_thyroid",        
+  "site_bone",           
+  "site_headneck",       
+  "site_softtissue",    
+  "site_colorectal",     
+  "site_anus",           
+  "site_stomach",        
+  "site_liver",          
+  "site_pancreas",      
+  "site_esophagus",      
+  "site_breast",     
+  "site_cervix",         
+  "site_ovary",          
+  "site_vulva",         
+  "site_prostate",       
+  "site_testicle",       
+  "site_kidney",         
+  "site_bladder",        
+  "site_other")] = "logreg" 
 
 methods[c(
   "number_of_arms", 
@@ -1077,102 +1114,7 @@ imputed <- mice(
 # Van Buuren, S. 2018. Flexible Imputation of Missing Data. Second Edition. Boca Raton, FL: Chapman & Hall/CRC.
 
           
-############################
-#LOGISTIC REGRESSION
 
-# Pool uses Rubin's Rules to pool models built on a matrix of imputed data sets 
-# (basically builds a model for every single imputed dataset, i.e. all 25, and 
-# then uses this set of rules to pool to coefficents into an average)
-# glm is the logistic regression function. adjusted risk ratio is the e^coefficient value provided
-
-do_logistic <- function(output_variable, imputed) {
-  fmla <- as.formula(paste0(output_variable, " ~ 
-    industry_any2b +
-    new_primary_purpose_treatment +
-    br_phase4_ref_ph3 +
-    new_enroll +
-    br_masking2  +
-    br_allocation +
-    has_dmc +
-    br_gni_lmic_hic +
-    num_facilities +
-    infection_any +
-    infection_helminth +
-    infection_intestines +
-    infection_hepatitis +
-    neoplasia_primary +
-    neoplasia_metastasis +
-    neoplasia_disease +
-    abdominal_hernia +
-    appendicitis +
-    cirrhosis +
-    diverticular_disease +
-    fecal_diversion +
-    br_singleregion4 +
-    functional_disorder +
-    gallstones +
-    gerd +
-    hemorrhoids +
-    hypoxic +
-    ileus +
-    ibd +
-    malabsorptive +
-    motility +
-    nafld_nash +
-    nonspecific +
-    pancreatitis +
-    transplant +
-    ulcerative_disease +
-    other +
-    location_esophagus +
-    location_stomach +
-    location_small_intestine +
-    location_colon_rectum +
-    location_anus +
-    location_liver +
-    location_biliarytract +
-    location_gallbladder +
-    location_pancreas +
-    location_peritoneum +
-    location_notspecified +
-    interv_drug +
-    interv_other +
-    interv_device +
-    interv_procedure +
-    interv_behavioral +
-    interv_biological +
-    interv_dietary +
-    interv_radiation  +
-    interv_diagnostic  +
-    interv_genetic  +
-    interv_combination"))
-
-  output <- imputed %>% 
-    mice::complete("all") %>%
-    lapply(function(i) {
-      add_additional_columns(i, TRUE) %>% 
-        filter(br_trialduration > 0) %>%
-        filter(!is.na(!! rlang::sym(output_variable)))
-    }) %>%
-    lapply(glm, formula = fmla, family = binomial(link = logit)) %>%
-    pool()
-
-  summ <- summary(output, conf.int = TRUE, exponentiate = TRUE)
-  ret <- do.call(rbind, lapply(seq(length(summ$term)), function(i) {
-    data.frame(
-        variable = summ$term[i],
-        aOR = round(summ$estimate[i], 3),
-        low_ci = round(summ$`2.5`[i], 3),
-        hi_ci = round(summ$`97.5`[i], 3),
-        p_val = format_p_val(summ$p.value[i])
-    )
-  }))
-
-  return(ret)
-}
-
-results_reported <- do_logistic("br_were_results_reported_within_1year", imputed)
-early_disc <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
 
 ###############
 		 
@@ -1211,22 +1153,102 @@ save_kaplain_meier <- function(data, var, file_path, new_names, file_name = NA) 
     dev.off()
 }
 
-save_kaplain_meier(full_onc_df, "industry_any2b", "~/Desktop/km_curves/", c("Industry", "Academic", "US Government"))
-save_kaplain_meier(full_onc_df, "all_other_disease", "~/Desktop/km_curves/", c("Neoplasia & Infection", "All Other Disease"))
-save_kaplain_meier(full_onc_df, "infection_any", "~/Desktop/km_curves/", c("All Other Disease", "Infection"))
-save_kaplain_meier(full_onc_df, "neoplasia_disease", "~/Desktop/km_curves/", c("All Other Disease", "Neoplasia"))
-save_kaplain_meier(full_onc_df, "br_phase4_ref_ph3", "~/Desktop/km_curves/", c("Phase 3", "Not Applicable", "Phase 1", "Phase 2", "Phase 4"))
-save_kaplain_meier(full_onc_df, "new_primary_purpose_treatment", "~/Desktop/km_curves/", c("Primary Purpose = Treatment", "Primary Purpose = Basic Science", "Primary Purpose = Other", "Primary Purpose = Prevention"))
-save_kaplain_meier(full_onc_df, "br_allocation", "~/Desktop/km_curves/", c("Non-Randomized", "Randomized"))
-save_kaplain_meier(full_onc_df, "br_singleregion4", "~/Desktop/km_curves/", c("Other and Multi-Region", "East Asia", "Europe", "North America"))
-save_kaplain_meier(full_onc_df, "new_num_facilities", "~/Desktop/km_curves/", c("Number Of Facilities = 1", "Number Of Facilities = 2", "Number Of Facilities = [3, 10)", "Number Of Facilities = [10, Infinity)"))
-save_kaplain_meier(full_onc_df, "has_dmc", "~/Desktop/km_curves/", c("No DMC", "Has DMC"))
-save_kaplain_meier(full_onc_df, "br_masking2", "~/Desktop/km_curves/", c("No Blinding", "Double Blinding", "Single Blinding"))
-save_kaplain_meier(full_onc_df, "new_enroll", "~/Desktop/km_curves/", c("enrollment = [0,10)", "enrollment = [10, 50)", "enrollment = [50, 100)", "enrollment = [100, 500)", "enrollment = [500, 1000)", "enrollment = [1000, Infinity]"))
+save_kaplain_meier(surg_onc_df, "industry_any2b", "~/Desktop/km_curves/", c("Industry", "Academic", "US Government"))
+save_kaplain_meier(surg_onc_df, "br_phase4_ref_ph3", "~/Desktop/km_curves/", c("Phase 3", "Not Applicable", "Phase 1", "Phase 2", "Phase 4"))
+save_kaplain_meier(surg_onc_df, "new_primary_purpose_treatment", "~/Desktop/km_curves/", c("Primary Purpose = Treatment", "Primary Purpose = Basic Science", "Primary Purpose = Other", "Primary Purpose = Prevention"))
+save_kaplain_meier(surg_onc_df, "br_allocation", "~/Desktop/km_curves/", c("Non-Randomized", "Randomized"))
+save_kaplain_meier(surg_onc_df, "br_singleregion4", "~/Desktop/km_curves/", c("Other and Multi-Region", "East Asia", "Europe", "North America"))
+save_kaplain_meier(surg_onc_df, "new_num_facilities", "~/Desktop/km_curves/", c("Number Of Facilities = 1", "Number Of Facilities = 2", "Number Of Facilities = [3, 10)", "Number Of Facilities = [10, Infinity)"))
+save_kaplain_meier(surg_onc_df, "has_dmc", "~/Desktop/km_curves/", c("No DMC", "Has DMC"))
+save_kaplain_meier(surg_onc_df, "br_masking2", "~/Desktop/km_curves/", c("No Blinding", "Double Blinding", "Single Blinding"))
+save_kaplain_meier(surg_onc_df, "new_enroll", "~/Desktop/km_curves/", c("enrollment = [0,10)", "enrollment = [10, 50)", "enrollment = [50, 100)", "enrollment = [100, 500)", "enrollment = [500, 1000)", "enrollment = [1000, Infinity]"))
+
+save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Surgical Oncology Trials", "All Other Trials"))
 
 
 
 
+
+############################
+#LOGISTIC REGRESSION
+
+# Pool uses Rubin's Rules to pool models built on a matrix of imputed data sets 
+# (basically builds a model for every single imputed dataset, i.e. all 25, and 
+# then uses this set of rules to pool to coefficents into an average)
+# glm is the logistic regression function. adjusted risk ratio is the e^coefficient value provided
+
+do_logistic <- function(output_variable, imputed) {
+  fmla <- as.formula(paste0(output_variable, " ~ 
+    industry_any2b +
+    new_primary_purpose_treatment +
+    br_phase4_ref_ph3 +
+    new_enroll +
+    br_masking2  +
+    br_allocation +
+    has_dmc +
+    br_gni_lmic_hic +
+    num_facilities +
+    treatment_xrt +
+    treatment_surg +
+    treatment_invasive +
+    treatment_medicine +
+    treatment_other +
+    behavior_benign +
+    behavior_uncertain +
+    behavior_insitu +
+    behavior_malignant +
+    behavior_metastatic +
+    site_lung +
+    site_cns +
+    site_heme +
+    site_melanoma +
+    site_thyroid +
+    site_bone +
+    site_headneck +
+    site_softtissue +
+    site_colorectal +
+    site_anus +
+    site_stomach +
+    site_liver +
+    site_pancreas +
+    site_esophagus +
+    site_breast +
+    site_cervix +
+    site_ovary +
+    site_vulva +
+    site_prostate +
+    site_testicle +
+    site_kidney +
+    site_bladder +
+    site_other"))
+
+  output <- imputed %>% 
+    mice::complete("all") %>%
+    lapply(function(i) {
+      add_additional_columns(i, TRUE) %>% 
+        filter(br_trialduration > 0) %>%
+        filter(!is.na(!! rlang::sym(output_variable)))
+    }) %>%
+    lapply(glm, formula = fmla, family = binomial(link = logit)) %>%
+    pool()
+
+  summ <- summary(output, conf.int = TRUE, exponentiate = TRUE)
+  ret <- do.call(rbind, lapply(seq(length(summ$term)), function(i) {
+    data.frame(
+        variable = summ$term[i],
+        aOR = round(summ$estimate[i], 3),
+        low_ci = round(summ$`2.5`[i], 3),
+        hi_ci = round(summ$`97.5`[i], 3),
+        p_val = format_p_val(summ$p.value[i])
+    )
+  }))
+
+  return(ret)
+}
+
+results_reported <- do_logistic("br_were_results_reported_within_1year", imputed)
+early_disc <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
+		 
 ###########
 
 # Cox regression with all variables
@@ -1436,9 +1458,10 @@ joined <- full_join(cox_results, lasso_cox_results, by = "name", suffix = c(".fu
 
 
 #########
-View(table1)
-View(table2)
-View(table3)
+View(tableBintime)
+View(tableIndustry)
+View(tableED)
+View(tableSurg)
 View(ts_table)
 View(results_reported)
 View(early_disc)
