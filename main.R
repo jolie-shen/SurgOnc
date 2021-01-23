@@ -609,7 +609,7 @@ tableIndustrySurg <- do_table_analysis(surg_onc_df, "industry_any2b")
 	      
 #-------UNIVARIATE ANALYSIS FOR EARLY DISCONTINUATION--------#  
 tableEDAll <- do_table_analysis(full_onc_df, "early_discontinuation")
-tableEDSurg <- do_table_analysis(full_onc_df, "early_discontinuation")
+tableEDSurg <- do_table_analysis(surg_onc_df, "early_discontinuation")
 	      
 #------ TABLE 4 STRATIFIED BY SURG ONC-------#
 tableSurg <- do_table_analysis(full_onc_df, "treatment_surg")
@@ -1294,68 +1294,50 @@ do_cox <- function(imputed, do_lasso = FALSE, vars_to_select = NA, alpha = 1) {
 	    }) %>%
 	    lapply(function(i) {
 		    x <- model.matrix(
-		      ~ industry_any2b +
-		      ~ new_primary_purpose_treatment +
-		      ~ br_phase4_ref_ph3 +
-		      ~ new_enroll +
-		      ~ br_masking2  +
-		      ~ br_allocation +
-		      has_dmc +
-		      ~ br_gni_lmic_hic +
-          ~ br_singleregion4 +
-		      ~ new_num_facilities +
-		      infection_any +
-		      infection_helminth +
-		      infection_intestines +
-		      infection_hepatitis +
-		      neoplasia_primary +
-		      neoplasia_metastasis +
-		      neoplasia_disease +
-		      abdominal_hernia +
-		      appendicitis +
-		      br_trialduration +
-		      br_censor_earlydiscontinuation +
-		      cirrhosis +
-		      diverticular_disease +
-		      fecal_diversion +
-		      functional_disorder +
-		      gallstones +
-		      gerd +
-		      hemorrhoids +
-		      hypoxic +
-		      ileus +
-		      ibd +
-		      malabsorptive +
-		      motility +
-		      nafld_nash +
-		      nonspecific +
-		      pancreatitis +
-		      transplant +
-		      ulcerative_disease +
-		      other +
-		      location_esophagus +
-		      location_stomach +
-		      location_small_intestine +
-		      location_colon_rectum +
-		      location_anus +
-		      location_liver +
-		      location_biliarytract +
-		      location_gallbladder +
-		      location_pancreas +
-		      location_peritoneum +
-		      location_notspecified +
-		      interv_drug +
-		      interv_other +
-		      interv_device +
-		      interv_procedure +
-		      interv_behavioral +
-		      interv_biological +
-		      interv_dietary +
-		      interv_radiation  +
-		      interv_diagnostic  +
-		      interv_genetic  +
-		      interv_combination,
-		      i
+		          ~ industry_any2b +
+              ~ new_primary_purpose_treatment +
+              ~ br_phase4_ref_ph3 +
+              ~ new_enroll +
+              ~ br_masking2  +
+              ~ br_allocation +
+              has_dmc +
+              ~ br_gni_lmic_hic +
+              br_trialduration +
+              br_censor_earlydiscontinuation +
+              num_facilities +  # Not newnum_facilities or br_censor_earlydiscontinuation?
+              treatment_xrt +
+              treatment_surg +
+              treatment_invasive +
+              treatment_medicine +
+              treatment_other +
+              behavior_benign +
+              behavior_uncertain +
+              behavior_insitu +
+              behavior_malignant +
+              behavior_metastatic +
+              site_lung +
+              site_cns +
+              site_heme +
+              site_melanoma +
+              site_thyroid +
+              site_bone +
+              site_headneck +
+              site_softtissue +
+              site_colorectal +
+              site_anus +
+              site_stomach +
+              site_liver +
+              site_pancreas +
+              site_esophagus +
+              site_breast +
+              site_cervix +
+              site_ovary +
+              site_vulva +
+              site_prostate +
+              site_testicle +
+              site_kidney +
+              site_bladder +
+              site_other, i
 		    )
 		    if (length(vars_to_select) > 1) {
 		    	vars_to_select <- as.character(vars_to_select)
