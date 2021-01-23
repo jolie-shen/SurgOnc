@@ -5,6 +5,12 @@ libraries <- c(
   'survminer', 'Kendall', 'coin', 'dplyr', 'viridis'
 )
 
+# MD5SUMs of input data:
+# f7fb18e2129c725d65c78709ad9cf589  Bigtbl.Rdata
+# b8b345eb55276f848b8aabc0ecffaf55  fdaaa_tracker_data.rds
+# aff8ddfc0909b24ca141fd96eecc0d53  nct_startupfiles_1b.RData
+# 7955b845f96d474d2b4b2f412c5ab950  prelim_table.rds
+
 
 # Load libraries
 loaded <- lapply(libraries, library, character.only = TRUE)
@@ -30,9 +36,6 @@ fdaaa_tracker_data <- readRDS(
 )
 fdaa_cols <- colnames(fdaaa_tracker_data)
 colnames(fdaaa_tracker_data) <- paste0('fdaaatracker_', fdaa_cols)
-
-
-
 
 # -------------------------------------------------------------------------------------------------------- #
 # --------------------        load and organize data from Onc Labelers      --------------------------
@@ -437,7 +440,8 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
   return(full_onc_df)
 }
 
-full_onc_df <- add_additional_columns(joined_df)
+full_onc_df <- add_additional_columns(joined_df) %>% 
+  mutate(were_results_reported = as.integer(as.logical(were_results_reported)))
 
 #FULL_ONC_DF$TREATMENT_SURG N = 1661 after taking out interventional and stuff before January 1 2020 or after Oct 1 2007
 	   
@@ -564,7 +568,6 @@ do_table_analysis <- function(df, cols) {
   locations <- do.call(rbind, lapply(cols_location, function(i) {
     get_freq_table(i, df, i, cols)
   }))
-
 
   total <- rbind(
     pp,
@@ -829,7 +832,7 @@ micedata <- joined_df %>%
 # is, "the number of imputations should be similar to the percentage of 
 # cases that are incomplete." Given the computational expense and the above
 # literature, plus the small amount of missing data, a value of 10 seems valid
-num_imputations <- 2
+num_imputations <- 1
 
 # Royston and White (2011) and Van Buuren et al. (1999) have all suggested
 # that more than 10 cycles are needed for the convergence of the sampling
@@ -840,7 +843,7 @@ num_imputations <- 2
 # we ran the well-known method described in "MICE in R" from the Journal of 
 # Statistical Software (2011), and found good convergence using just 10 
 # iterations. As a precaution, I've upped this to 20.
-iterations <- 1
+iterations <- 2
 
 # Simply just set up the methods and predictor matrices, as suggested in Heymans and Eekhout's "Applied Missing Data Analysis"
 init <- mice(micedata, maxit = 0, m = 1) 
@@ -1109,20 +1112,17 @@ imputed <- mice(
 # van Buuren S, Brand JPL, Groothuis-Oudshoorn CGM, Rubin DB (2006b). “Fully Conditional Specification in Multivariate Imputation.” Journal of Statistical Computation and Simulation, 76(12), 1049–1064.
 # Van Buuren, S. 2018. Flexible Imputation of Missing Data. Second Edition. Boca Raton, FL: Chapman & Hall/CRC.
 
-          
-
-
 ###############
 		 
 # KAPLAN-MEIER
 		 
 #############
-save_kaplain_meier <- function(data, var, file_path, new_names, file_name = NA) {
+save_kaplain_meier <- function(data, var, file_path, new_names, status_var, file_name = NA) {
   if (is.na(file_name)) {
-    file_name <- paste0(var, ".png")
+    file_name <- paste0(var, "_VS_", status_var, ".png")
   }
   filtered <- data %>% filter(br_trialduration > 0)
-  ffmla <- as.formula(paste0("Surv(br_trialduration, br_censor_earlydiscontinuation) ~ ", var))
+  ffmla <- as.formula(paste0("Surv(br_trialduration, ", status_var, ") ~ ", var))
   survival_fit <- surv_fit(formula = ffmla, data = filtered)
   names(survival_fit$strata) <- new_names
   plot <- ggsurvplot(survival_fit, 
@@ -1149,21 +1149,30 @@ save_kaplain_meier <- function(data, var, file_path, new_names, file_name = NA) 
     dev.off()
 }
 
-save_kaplain_meier(surg_onc_df, "industry_any2b", "~/Desktop/km_curves/", c("Industry", "Academic", "US Government"))
-save_kaplain_meier(surg_onc_df, "br_phase4_ref_ph3", "~/Desktop/km_curves/", c("Phase 3", "Not Applicable", "Phase 1", "Phase 2", "Phase 4"))
-save_kaplain_meier(surg_onc_df, "new_primary_purpose_treatment", "~/Desktop/km_curves/", c("Primary Purpose = Treatment", "Primary Purpose = Basic Science", "Primary Purpose = Other", "Primary Purpose = Prevention"))
-save_kaplain_meier(surg_onc_df, "br_allocation", "~/Desktop/km_curves/", c("Non-Randomized", "Randomized"))
-save_kaplain_meier(surg_onc_df, "br_singleregion4", "~/Desktop/km_curves/", c("Other and Multi-Region", "East Asia", "Europe", "North America"))
-save_kaplain_meier(surg_onc_df, "new_num_facilities", "~/Desktop/km_curves/", c("Number Of Facilities = 1", "Number Of Facilities = 2", "Number Of Facilities = [3, 10)", "Number Of Facilities = [10, Infinity)"))
-save_kaplain_meier(surg_onc_df, "has_dmc", "~/Desktop/km_curves/", c("No DMC", "Has DMC"))
-save_kaplain_meier(surg_onc_df, "br_masking2", "~/Desktop/km_curves/", c("No Blinding", "Double Blinding", "Single Blinding"))
-save_kaplain_meier(surg_onc_df, "new_enroll", "~/Desktop/km_curves/", c("enrollment = [0,10)", "enrollment = [10, 50)", "enrollment = [50, 100)", "enrollment = [100, 500)", "enrollment = [500, 1000)", "enrollment = [1000, Infinity]"))
+dir.create(file.path("~/Desktop/", "km_curves"), showWarnings = FALSE)
+# Survival curves using br_early_discontinuation as censor.
+save_kaplain_meier(surg_onc_df, "industry_any2b", "~/Desktop/km_curves/", c("Industry", "Academic", "US Government"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "br_phase4_ref_ph3", "~/Desktop/km_curves/", c("Phase 3", "Not Applicable", "Phase 1", "Phase 2", "Phase 4"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "new_primary_purpose_treatment", "~/Desktop/km_curves/", c("Primary Purpose = Treatment", "Primary Purpose = Prevention"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "br_allocation", "~/Desktop/km_curves/", c("Non-Randomized", "Randomized"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "br_singleregion4", "~/Desktop/km_curves/", c("Other and Multi-Region", "East Asia", "Europe", "North America"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "new_num_facilities", "~/Desktop/km_curves/", c("Number Of Facilities = 1", "Number Of Facilities = 2", "Number Of Facilities = [3, 10)", "Number Of Facilities = [10, Infinity)"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "has_dmc", "~/Desktop/km_curves/", c("No DMC", "Has DMC"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "br_masking2", "~/Desktop/km_curves/", c("No Blinding", "Double Blinding", "Single Blinding"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(surg_onc_df, "new_enroll", "~/Desktop/km_curves/", c("enrollment = [0,10)", "enrollment = [10, 50)", "enrollment = [50, 100)", "enrollment = [100, 500)", "enrollment = [500, 1000)", "enrollment = [1000, Infinity]"), "br_censor_earlydiscontinuation")
+save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Surgical Oncology Trials", "All Other Trials"), "br_censor_earlydiscontinuation")
 
-save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Surgical Oncology Trials", "All Other Trials"))
-
-
-
-
+# Survival curves using were_results_reported as censor.
+save_kaplain_meier(surg_onc_df, "industry_any2b", "~/Desktop/km_curves/", c("Industry", "Academic", "US Government"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "br_phase4_ref_ph3", "~/Desktop/km_curves/", c("Phase 3", "Not Applicable", "Phase 1", "Phase 2", "Phase 4"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "new_primary_purpose_treatment", "~/Desktop/km_curves/", c("Primary Purpose = Treatment", "Primary Purpose = Prevention"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "br_allocation", "~/Desktop/km_curves/", c("Non-Randomized", "Randomized"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "br_singleregion4", "~/Desktop/km_curves/", c("Other and Multi-Region", "East Asia", "Europe", "North America"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "new_num_facilities", "~/Desktop/km_curves/", c("Number Of Facilities = 1", "Number Of Facilities = 2", "Number Of Facilities = [3, 10)", "Number Of Facilities = [10, Infinity)"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "has_dmc", "~/Desktop/km_curves/", c("No DMC", "Has DMC"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "br_masking2", "~/Desktop/km_curves/", c("No Blinding", "Double Blinding", "Single Blinding"), "were_results_reported")
+save_kaplain_meier(surg_onc_df, "new_enroll", "~/Desktop/km_curves/", c("enrollment = [0,10)", "enrollment = [10, 50)", "enrollment = [50, 100)", "enrollment = [100, 500)", "enrollment = [500, 1000)", "enrollment = [1000, Infinity]"), "were_results_reported")
+save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Surgical Oncology Trials", "All Other Trials"), "were_results_reported")
 
 ############################
 #LOGISTIC REGRESSION
@@ -1183,7 +1192,7 @@ do_logistic <- function(output_variable, imputed) {
     br_allocation +
     has_dmc +
     br_gni_lmic_hic +
-    num_facilities +
+    new_num_facilities +
     treatment_xrt +
     treatment_surg +
     treatment_invasive +
@@ -1242,8 +1251,8 @@ do_logistic <- function(output_variable, imputed) {
   return(ret)
 }
 
-results_reported <- do_logistic("br_were_results_reported_within_1year", imputed)
-early_disc <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
+results_reported_full <- do_logistic("br_were_results_reported_within_1year", imputed)
+early_disc_full <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
 		 
 ###########
 
@@ -1281,12 +1290,70 @@ bvec_format_num <- function(numvec, dec = 2, cap = Inf, na_response = NA, alignW
   return(vec)
 }
 
-do_cox <- function(imputed, do_lasso = FALSE, vars_to_select = NA, alpha = 1) {
-	output <- imputed %>% 
+do_cox_pooling <- function(output, use_early_discontinuation) {
+  if (use_early_discontinuation) {
+    output <- output %>% 
+      lapply(coxph, formula = Surv(br_trialduration, br_censor_earlydiscontinuation) ~ .) %>%
+      pool()
+  } else {
+    output <- output %>% 
+      lapply(coxph, formula = Surv(br_trialduration, were_results_reported) ~ .) %>%
+      pool()
+  }
+
+  summary_table <- 
+    summary(output, conf.int = TRUE, exponentiate = TRUE, conf.level = 0.95)
+
+  coef_table <- 
+    summary_table %>%
+    tibble::rownames_to_column('coxlevels') %>%
+    dplyr::select(coxlevels, name = term, Estimate = estimate, `Std. Error` = std.error, `z value` = statistic, `Pr(>|z|)` = p.value)
+
+  # select the two columns that correspond to the upper and lower confidence estimates
+  conf_table <- 
+    summary_table[, c((ncol(summary_table) - 1), ncol(summary_table))]
+
+  colnames(conf_table) <- c('cox_HR_conf_low','cox_HR_conf_high')
+
+  conf_table <- 
+    conf_table %>%
+    tibble::rownames_to_column('coxlevels') 
+
+  stats_table <- 
+    left_join(conf_table, # this should go first or else you lose the rows that are NAs
+              coef_table, 
+              by = 'coxlevels') %>%
+    mutate(coxHR = Estimate, # I don't need to exponentiate in this version because I've already exponentiated in the summary_table
+            coxpvals = `Pr(>|z|)`)
+
+  # format everything so the strings look nice
+  coef_full_table <- 
+      stats_table %>% 
+      mutate(FMT_HR = bvec_format_num(coxHR, cap=100) %>% {sprintf(paste0('%', max(nchar(.), na.rm=T), 's'), .)},
+              FMT_PVAL = formatC(coxpvals, digits = 2, format = 'e') %>% {sprintf(paste0('%', max(nchar(.), na.rm=T), 's'), .)},
+              FMT_up = bvec_format_num(cox_HR_conf_high, cap=100) %>% {sprintf(paste0('%',max(nchar(.), na.rm=T),'s'), .)},
+              FMT_low = bvec_format_num(cox_HR_conf_low, cap=100),
+              FMT_conf = paste0('(',FMT_low,' - ',FMT_up,')') %>% {sprintf(paste0('%',max(nchar(.), na.rm=T),'s'),.)},
+              HR_full_p = paste0(FMT_HR, ' ', FMT_conf, '; p<',FMT_PVAL),
+              HR_full = paste0(FMT_HR, ' ', FMT_conf)) %>%
+      mutate(FMT_PVAL = case_when(
+                  coxpvals < 0.0001 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "***"),
+                  coxpvals < 0.001 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "***"),
+                  coxpvals < 0.01 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "**"),
+                  coxpvals < 0.05 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "*"),
+                  TRUE ~ as.character(format(round(coxpvals, 3), nsmall = 3))
+              )) %>%
+      dplyr::select(name, FMT_HR, FMT_conf, FMT_PVAL)
+  
+  return(coef_full_table)
+}
+
+full_cox_pooled <- imputed %>% 
 	    mice::complete("all") %>%
 	    lapply(function(i) {
 	      add_additional_columns(i, TRUE) %>% 
-          filter(br_trialduration > 0)
+          filter(br_trialduration > 0) %>%
+          filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
 	    }) %>%
 	    lapply(function(i) {
 		    x <- model.matrix(
@@ -1300,13 +1367,13 @@ do_cox <- function(imputed, do_lasso = FALSE, vars_to_select = NA, alpha = 1) {
               ~ br_gni_lmic_hic +
               br_trialduration +
               br_censor_earlydiscontinuation +
-              num_facilities +  # Not newnum_facilities or br_censor_earlydiscontinuation?
+              new_num_facilities +
               treatment_xrt +
               treatment_surg +
               treatment_invasive +
               treatment_medicine +
               treatment_other +
-              behavior_benign +
+              #behavior_benign + Gonna consider this the reference value
               behavior_uncertain +
               behavior_insitu +
               behavior_malignant +
@@ -1333,107 +1400,78 @@ do_cox <- function(imputed, do_lasso = FALSE, vars_to_select = NA, alpha = 1) {
               site_testicle +
               site_kidney +
               site_bladder +
-              site_other, i
+              site_other +
+              were_results_reported, 
+              i
 		    )
-		    if (length(vars_to_select) > 1) {
-		    	vars_to_select <- as.character(vars_to_select)
-		    	if (!("br_censor_earlydiscontinuation" %in% vars_to_select)) {
-		    		vars_to_select <- c(vars_to_select, "br_censor_earlydiscontinuation")
-		    	}
-		    	if (!("br_trialduration" %in% vars_to_select)) {
-		    		vars_to_select <- c(vars_to_select, "br_trialduration")
-		    	}
-
-		    	x <- x[, vars_to_select]
-		    }
-
 		    return(as.data.frame(x))
 	    })
 
-
-	if (!do_lasso) {
-		output <- output %>% 
-      lapply(coxph, formula = Surv(br_trialduration, br_censor_earlydiscontinuation) ~ .) %>%
-      pool()
-
-		summary_table <- 
-		  summary(output, conf.int = TRUE, exponentiate = TRUE, conf.level = 0.95)
-
-		coef_table <- 
-		  summary_table %>%
-		  tibble::rownames_to_column('coxlevels') %>%
-		  dplyr::select(coxlevels, name = term, Estimate = estimate, `Std. Error` = std.error, `z value` = statistic, `Pr(>|z|)` = p.value)
-
-		# select the two columns that correspond to the upper and lower confidence estimates
-		conf_table <- 
-		  summary_table[, c((ncol(summary_table) - 1), ncol(summary_table))]
-
-		colnames(conf_table) <- c('cox_HR_conf_low','cox_HR_conf_high')
-
-		conf_table <- 
-		  conf_table %>%
-		  tibble::rownames_to_column('coxlevels') 
-
-		stats_table <- 
-      left_join(conf_table, # this should go first or else you lose the rows that are NAs
-                coef_table, 
-                by = 'coxlevels') %>%
-      mutate(coxHR = Estimate, # I don't need to exponentiate in this version because I've already exponentiated in the summary_table
-              coxpvals = `Pr(>|z|)`)
-
-		# format everything so the strings look nice
-		coef_full_table <- 
-		    stats_table %>% 
-		    mutate(FMT_HR = bvec_format_num(coxHR, cap=100) %>% {sprintf(paste0('%', max(nchar(.), na.rm=T), 's'), .)},
-		            FMT_PVAL = formatC(coxpvals, digits = 2, format = 'e') %>% {sprintf(paste0('%', max(nchar(.), na.rm=T), 's'), .)},
-		            FMT_up = bvec_format_num(cox_HR_conf_high, cap=100) %>% {sprintf(paste0('%',max(nchar(.), na.rm=T),'s'), .)},
-		            FMT_low = bvec_format_num(cox_HR_conf_low, cap=100),
-		            FMT_conf = paste0('(',FMT_low,' - ',FMT_up,')') %>% {sprintf(paste0('%',max(nchar(.), na.rm=T),'s'),.)},
-		            HR_full_p = paste0(FMT_HR, ' ', FMT_conf, '; p<',FMT_PVAL),
-		            HR_full = paste0(FMT_HR, ' ', FMT_conf)) %>%
-		    mutate(FMT_PVAL = case_when(
-		                coxpvals < 0.0001 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "***"),
-		                coxpvals < 0.001 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "***"),
-		                coxpvals < 0.01 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "**"),
-		                coxpvals < 0.05 ~ paste0(format(round(coxpvals, 3), nsmall = 3), "*"),
-		                TRUE ~ as.character(format(round(coxpvals, 3), nsmall = 3))
-		            )) %>%
-		    dplyr::select(name, FMT_HR, FMT_conf, FMT_PVAL)
-		
-		return(coef_full_table)
-	} else {
-    should_standardize <- TRUE
-		good_cols <- c()
-		for (data in output) {
-			mat <- as.matrix(data)
-			mat <- mat[ , ! colnames(mat) %in% c("br_trialduration", "br_censor_earlydiscontinuation")]
-			cv.fit <- cv.glmnet(mat, Surv(data$br_trialduration, data$br_censor_earlydiscontinuation), alpha = alpha, standardize = should_standardize, family = "cox", nfolds = 20, grouped = TRUE, maxit = 1000)
-			fit <- glmnet(mat, Surv(data$br_trialduration, data$br_censor_earlydiscontinuation), alpha = alpha, standardize = should_standardize, family = "cox", maxit = 1000)
-			coefs <- coef(cv.fit, s = "lambda.min")
-			for (i in 1:length(coefs[, "1"])) {
-				if (coefs[, "1"][i] != 0) {
-					good_cols <- c(good_cols, attr(coefs[, "1", ][i], "names"))
-				}
-			}
-		}
-
-    # https://pubmed.ncbi.nlm.nih.gov/18203127/
-		all_vars <- as.data.frame(table(good_cols)) %>% 
-			filter(Freq >= imputed$m / 2)
-
-		return(all_vars$good_cols)
-	}
-}
+only_surg_cox_pooled <- imputed %>% 
+	    mice::complete("all") %>%
+	    lapply(function(i) {
+	      add_additional_columns(i, TRUE) %>% 
+          filter(br_trialduration > 0 & treatment_surg == TRUE) %>%
+          filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
+	    }) %>%
+	    lapply(function(i) {
+		    x <- model.matrix(
+		          ~ industry_any2b +
+              ~ br_phase4_ref_ph3 +
+              ~ new_enroll +
+              ~ br_masking2  +
+              ~ br_allocation +
+              has_dmc +
+              ~ br_gni_lmic_hic +
+              br_trialduration +
+              br_censor_earlydiscontinuation +
+              new_num_facilities + 
+              treatment_xrt +
+              treatment_invasive +
+              treatment_medicine +
+              treatment_other +
+              #behavior_benign + Gonna consider this the reference value
+              behavior_uncertain +
+              behavior_insitu +
+              behavior_malignant +
+              site_lung +
+              site_cns +
+              site_heme +
+              site_melanoma +
+              site_thyroid +
+              site_bone +
+              site_headneck +
+              site_softtissue +
+              site_colorectal +
+              site_anus +
+              site_stomach +
+              site_liver +
+              site_pancreas +
+              site_esophagus +
+              site_breast +
+              site_cervix +
+              site_ovary +
+              site_vulva +
+              site_prostate +
+              site_testicle +
+              site_kidney +
+              site_bladder +
+              site_other +
+              were_results_reported, 
+              i
+		    )
+		    return(as.data.frame(x))
+	    })
 
 # Still need to do: Assess Cox fit, prove MAR, and prove PH assumption
 # Fit PH models based on all variables, variables significant in bivariate, stepwise p-values,
 # stepwise AIC, domain knowledge, and lasso regression
 
-cox_results <- do_cox(imputed)
-lasso_columns <- do_cox(imputed, do_lasso = TRUE)
-lasso_cox_results <- do_cox(imputed, do_lasso = FALSE, vars_to_select = lasso_columns)
-joined <- full_join(cox_results, lasso_cox_results, by = "name", suffix = c(".full", ".lasso"))
+cox_results_full_early_discontinuation <- do_cox_pooling(full_cox_pooled, TRUE)
+cox_results_only_surg_early_discontinuation <- do_cox_pooling(full_cox_pooled, TRUE)
 
+cox_results_full_were_results_reported <- do_cox_pooling(full_cox_pooled, FALSE)
+cox_results_only_surg_were_results_reported <- do_cox_pooling(full_cox_pooled, FALSE)
 
 #########
 View(tableBintime)
@@ -1441,11 +1479,15 @@ View(tableIndustry)
 View(tableED)
 View(tableSurg)
 View(ts_table)
-View(results_reported)
-View(early_disc)
-View(joined)
 
-		
+View(results_reported_full)
+View(early_disc_full)
+
+View(cox_results_full_early_discontinuation)
+View(cox_results_only_surg_early_discontinuation)
+View(cox_results_full_were_results_reported)
+View(cox_results_only_surg_were_results_reported)
+
 ##########
 #DATA VIS#
 ##########
@@ -1482,7 +1524,7 @@ make_plots(full_onc_df, "new_primary_purpose_treatment", "Primary Purpose Over T
 ##############
 #SPIDER PLOTS
 #############
-		
+
 library(janitor)
 library(fmsb)
 do_radar_graphs <- function(data, columns) {
@@ -1520,4 +1562,4 @@ do_radar_graphs <- function(data, columns) {
     )
     legend(x=0.7, y=1, legend = unique_cols, bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
 }
-do_radar_graphs(full_onc_df, c("location_esophagus", "location_stomach", "location_anus"))
+do_radar_graphs(full_onc_df, c("site_liver", "site_heme", "site_cns"))
