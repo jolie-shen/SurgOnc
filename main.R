@@ -440,8 +440,7 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
   return(full_onc_df)
 }
 
-full_onc_df <- add_additional_columns(joined_df) %>% 
-  mutate(were_results_reported = as.integer(as.logical(were_results_reported)))
+full_onc_df <- add_additional_columns(joined_df)
 
 #FULL_ONC_DF$TREATMENT_SURG N = 1661 after taking out interventional and stuff before January 1 2020 or after Oct 1 2007
 	   
@@ -832,7 +831,7 @@ micedata <- joined_df %>%
 # is, "the number of imputations should be similar to the percentage of 
 # cases that are incomplete." Given the computational expense and the above
 # literature, plus the small amount of missing data, a value of 10 seems valid
-num_imputations <- 1
+num_imputations <- 10
 
 # Royston and White (2011) and Van Buuren et al. (1999) have all suggested
 # that more than 10 cycles are needed for the convergence of the sampling
@@ -843,7 +842,7 @@ num_imputations <- 1
 # we ran the well-known method described in "MICE in R" from the Journal of 
 # Statistical Software (2011), and found good convergence using just 10 
 # iterations. As a precaution, I've upped this to 20.
-iterations <- 2
+iterations <- 20
 
 # Simply just set up the methods and predictor matrices, as suggested in Heymans and Eekhout's "Applied Missing Data Analysis"
 init <- mice(micedata, maxit = 0, m = 1) 
@@ -1183,6 +1182,7 @@ save_kaplain_meier(full_onc_df, "treatment_surg", "~/Desktop/km_curves/", c("Sur
 # glm is the logistic regression function. adjusted risk ratio is the e^coefficient value provided
 
 do_logistic <- function(output_variable, imputed) {
+  # treating behavior_benign as ref variable
   fmla <- as.formula(paste0(output_variable, " ~ 
     industry_any2b +
     new_primary_purpose_treatment +
@@ -1198,7 +1198,6 @@ do_logistic <- function(output_variable, imputed) {
     treatment_invasive +
     treatment_medicine +
     treatment_other +
-    behavior_benign +
     behavior_uncertain +
     behavior_insitu +
     behavior_malignant +
@@ -1353,6 +1352,7 @@ full_cox_pooled <- imputed %>%
 	    lapply(function(i) {
 	      add_additional_columns(i, TRUE) %>% 
           filter(br_trialduration > 0) %>%
+          mutate(were_results_reported = as.integer(as.logical(were_results_reported))) %>%
           filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
 	    }) %>%
 	    lapply(function(i) {
@@ -1412,6 +1412,7 @@ only_surg_cox_pooled <- imputed %>%
 	    lapply(function(i) {
 	      add_additional_columns(i, TRUE) %>% 
           filter(br_trialduration > 0 & treatment_surg == TRUE) %>%
+          mutate(were_results_reported = as.integer(as.logical(were_results_reported))) %>%
           filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
 	    }) %>%
 	    lapply(function(i) {
@@ -1472,21 +1473,6 @@ cox_results_only_surg_early_discontinuation <- do_cox_pooling(full_cox_pooled, T
 
 cox_results_full_were_results_reported <- do_cox_pooling(full_cox_pooled, FALSE)
 cox_results_only_surg_were_results_reported <- do_cox_pooling(full_cox_pooled, FALSE)
-
-#########
-View(tableBintime)
-View(tableIndustry)
-View(tableED)
-View(tableSurg)
-View(ts_table)
-
-View(results_reported_full)
-View(early_disc_full)
-
-View(cox_results_full_early_discontinuation)
-View(cox_results_only_surg_early_discontinuation)
-View(cox_results_full_were_results_reported)
-View(cox_results_only_surg_were_results_reported)
 
 ##########
 #DATA VIS#
@@ -1563,3 +1549,23 @@ do_radar_graphs <- function(data, columns) {
     legend(x=0.7, y=1, legend = unique_cols, bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
 }
 do_radar_graphs(full_onc_df, c("site_liver", "site_heme", "site_cns"))
+
+
+#########
+View(tableBintimeAll)
+View(tableBintimeSurg)
+View(tableIndustryAll)
+View(tableIndustrySurg)
+View(tableEDAll)
+View(tableEDSurg)
+View(tableSurg)
+View(ts_table_all)
+View(ts_table_surg)
+
+View(results_reported_full)
+View(early_disc_full)
+
+View(cox_results_full_early_discontinuation)
+View(cox_results_only_surg_early_discontinuation)
+View(cox_results_full_were_results_reported)
+View(cox_results_only_surg_were_results_reported)
