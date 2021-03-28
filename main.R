@@ -441,6 +441,8 @@ add_additional_columns <- function(input_df, recompute_dates = FALSE) {
 }
 
 full_onc_df <- add_additional_columns(joined_df)
+#updated 3/28/21 to take out all heme onc trials since they are not surgical	   
+full_onc_df <- as.data.frame(full_onc_df) %>% filter(site_heme == FALSE)
 
 #FULL_ONC_DF$TREATMENT_SURG N = 1661 after taking out interventional and stuff before January 1 2020 or after Oct 1 2007
 	   
