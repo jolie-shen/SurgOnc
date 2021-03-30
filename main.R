@@ -1572,3 +1572,52 @@ View(cox_results_full_early_discontinuation)
 View(cox_results_only_surg_early_discontinuation)
 View(cox_results_full_were_results_reported)
 View(cox_results_only_surg_were_results_reported)
+
+		
+		bar_graph_rollup <- full_onc_df %>% mutate(
+	location_str = ifelse(site_lung == TRUE, 'site_lung',
+				   ifelse(site_cns == TRUE, 'site_cns',
+				   ifelse(site_heme == TRUE, 'site_heme',
+				   ifelse(site_melanoma == TRUE, 'site_melanoma',
+				   ifelse(site_thyroid == TRUE, 'site_thyroid',
+				   ifelse(site_bone == TRUE, 'site_bone',
+				   ifelse(site_headneck == TRUE, 'site_headneck',
+				   ifelse(site_softtissue == TRUE, 'site_softtissue',
+				   ifelse(site_colorectal == TRUE, 'site_colorectal',
+				   ifelse(site_anus == TRUE, 'site_anus',
+				   ifelse(site_stomach == TRUE, 'site_stomach',
+				   ifelse(site_liver == TRUE, 'site_liver',
+				   ifelse(site_pancreas == TRUE, 'site_pancreas',
+				   ifelse(site_esophagus == TRUE, 'site_esophagus',
+				   ifelse(site_breast == TRUE, 'site_breast',
+				   ifelse(site_cervix == TRUE, 'site_cervix',
+				   ifelse(site_ovary == TRUE, 'site_ovary',
+				   ifelse(site_vulva == TRUE, 'site_vulva',
+				   ifelse(site_prostate == TRUE, 'site_prostate',
+				   ifelse(site_testicle == TRUE, 'site_testicle',
+				   ifelse(site_kidney == TRUE, 'site_kidney',
+				   ifelse(site_bladder == TRUE, 'site_bladder',
+				   ifelse(site_other == TRUE, 'site_other', NA))))))))))))))))))))))),
+	treatment_str = ifelse(treatment_xrt == TRUE, 'treatment_xrt',
+					ifelse(treatment_surg == TRUE, 'treatment_surg',
+					ifelse(treatment_invasive == TRUE, 'treatment_invasive',
+					ifelse(treatment_medicine == TRUE, 'treatment_medicine',
+					ifelse(treatment_other == TRUE, 'treatment_other', NA)))))
+	) %>% 
+	select(location_str, treatment_str) %>%
+	mutate(treatment_str=as.factor(treatment_str)) %>%
+	mutate(location_str=as.factor(location_str)) %>%
+	filter(!is.na(location_str)) %>% 
+	filter(!is.na(treatment_str)) %>% 
+	filter(treatment_str %in% c('treatment_xrt', 'treatment_surg', 'treatment_invasive')) %>%
+	group_by(treatment_str, location_str) %>%
+    summarise(count=n())
+
+
+bar_graph_rollup %>%
+  ggplot( aes(x=location_str, y=count, fill=treatment_str)) +
+    geom_bar(stat="identity", position="dodge") +
+    scale_fill_viridis(discrete=TRUE, name="") +
+    theme_ipsum() +
+    ylab("Number of baby") +
+    theme(axis.text.x = element_text(angle=90, hjust=1))
