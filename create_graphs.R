@@ -20,7 +20,7 @@ gi_trial_growth_global <-
   bgenerateSummaryGrowthDataStatistics(fgi_df,
                                        additional_columns = list(
                                          'sponsor' = c('funding2b_US.Govt', 'funding2b_Industry', 'funding2b_Other')
-                                       ), date_limits = c(2000, 2025))
+                                       ), date_limits = c(2007, 2020))
 
 gi_trial_growth_data_global <- gi_trial_growth_global[["Data"]]
 gi_trial_growth_statistics_global <- gi_trial_growth_global[["Statistics"]]
@@ -29,7 +29,7 @@ comparison_trial_growth_global <-
   bgenerateSummaryGrowthDataStatistics(fcomparison_df,
                                        additional_columns = list(
                                          'sponsor' = c('funding2b_US.Govt', 'funding2b_Industry', 'funding2b_Other')
-                                       ), date_limits = c(2000, 2025))
+                                       ), date_limits = c(2007, 2020))
 
 comparison_trial_growth_data_global <- comparison_trial_growth_global[["Data"]]
 comparison_trial_growth_statistics_global <- comparison_trial_growth_global[["Statistics"]]
@@ -47,7 +47,7 @@ gg_fig_1a_yearlytotal_gi_global <-
   geom_text(aes(label = total_trials_all),
             size = 3,
             vjust = -0.5) + 
-  scale_x_continuous(breaks = c(2008:2017)) + 
+  scale_x_continuous(breaks = c(2008:2020)) + 
   scale_y_continuous(breaks = seq(0, max_yearly_gi_global *1.5, roundUpNice(max_yearly_gi_global/8, nice = c(1,5,10))),
                      labels = function(label) bpadding(label, width = 4, makepercent = FALSE, num_decimals = 0)) +
   coord_cartesian(ylim = c(0, pretty(max_yearly_gi_global*9/8)[2])) + 
@@ -57,7 +57,7 @@ gg_fig_1a_yearlytotal_gi_global <-
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank(),
         axis.title.y = element_text(margin = margin(t=0, r = 10, b = 0, l = 0))) + 
-  labs(x = 'Year of Trial Submission', y = '\nNew gilogic\nTrials Per Year');
+  labs(x = 'Year of Trial Submission', y = '\nNew GI\nTrials Per Year');
 
 
 
@@ -195,6 +195,6 @@ gg_fig_1_4pane_gi_global_c <- ggpubr::ggarrange(gg_fig_1a_yearlytotal_gi_global,
                                                    nrow = 4, ncol = 1,
                                                    heights = c(2, 1, 2, 2),
                                                    labels = c('A', 'B', 'C', 'D')) %>%
-annotate_figure(top= text_grob('gg_fig_1_4pane_gi_global_c', face = 'bold'))
+annotate_figure(top= text_grob('Characteristics of GI Trials Over Time', face = 'bold'))
 
 gg_fig_1_4pane_gi_global_c
