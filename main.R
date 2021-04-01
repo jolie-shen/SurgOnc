@@ -1573,51 +1573,52 @@ View(cox_results_only_surg_early_discontinuation)
 View(cox_results_full_were_results_reported)
 View(cox_results_only_surg_were_results_reported)
 
-		
-		bar_graph_rollup <- full_onc_df %>% mutate(
-	location_str = ifelse(site_lung == TRUE, 'site_lung',
-				   ifelse(site_cns == TRUE, 'site_cns',
-				   ifelse(site_heme == TRUE, 'site_heme',
-				   ifelse(site_melanoma == TRUE, 'site_melanoma',
-				   ifelse(site_thyroid == TRUE, 'site_thyroid',
-				   ifelse(site_bone == TRUE, 'site_bone',
-				   ifelse(site_headneck == TRUE, 'site_headneck',
-				   ifelse(site_softtissue == TRUE, 'site_softtissue',
-				   ifelse(site_colorectal == TRUE, 'site_colorectal',
-				   ifelse(site_anus == TRUE, 'site_anus',
-				   ifelse(site_stomach == TRUE, 'site_stomach',
-				   ifelse(site_liver == TRUE, 'site_liver',
-				   ifelse(site_pancreas == TRUE, 'site_pancreas',
-				   ifelse(site_esophagus == TRUE, 'site_esophagus',
-				   ifelse(site_breast == TRUE, 'site_breast',
-				   ifelse(site_cervix == TRUE, 'site_cervix',
-				   ifelse(site_ovary == TRUE, 'site_ovary',
-				   ifelse(site_vulva == TRUE, 'site_vulva',
-				   ifelse(site_prostate == TRUE, 'site_prostate',
-				   ifelse(site_testicle == TRUE, 'site_testicle',
-				   ifelse(site_kidney == TRUE, 'site_kidney',
-				   ifelse(site_bladder == TRUE, 'site_bladder',
-				   ifelse(site_other == TRUE, 'site_other', NA))))))))))))))))))))))),
-	treatment_str = ifelse(treatment_xrt == TRUE, 'treatment_xrt',
-					ifelse(treatment_surg == TRUE, 'treatment_surg',
-					ifelse(treatment_invasive == TRUE, 'treatment_invasive',
-					ifelse(treatment_medicine == TRUE, 'treatment_medicine',
-					ifelse(treatment_other == TRUE, 'treatment_other', NA)))))
+#FIGURE 2 ABSTRACT
+
+bar_graph_rollup <- full_onc_df %>% mutate(
+	location_str = ifelse(site_lung == TRUE, 'Lung',
+				   ifelse(site_cns == TRUE, 'CNS',
+				   ifelse(site_melanoma == TRUE, 'Melanoma',
+				   ifelse(site_thyroid == TRUE, 'Thyroid',
+				   ifelse(site_bone == TRUE, 'Bone',
+				   ifelse(site_headneck == TRUE, 'Head/Neck',
+				   ifelse(site_softtissue == TRUE, 'Soft Tissue',
+				   ifelse(site_colorectal == TRUE, 'Colorectal',
+				   ifelse(site_anus == TRUE, 'Anus',
+				   ifelse(site_stomach == TRUE, 'Stomach',
+				   ifelse(site_liver == TRUE, 'Liver',
+				   ifelse(site_pancreas == TRUE, 'Pancreas',
+				   ifelse(site_esophagus == TRUE, 'Esophagus',
+				   ifelse(site_breast == TRUE, 'Breast',
+				   ifelse(site_cervix == TRUE, 'Cervix',
+				   ifelse(site_ovary == TRUE, 'Ovary',
+				   ifelse(site_vulva == TRUE, 'Vulva',
+				   ifelse(site_prostate == TRUE, 'Prostate',
+				   ifelse(site_testicle == TRUE, 'Testicle',
+				   ifelse(site_kidney == TRUE, 'Kidney',
+				   ifelse(site_bladder == TRUE, 'Bladder',
+				   ifelse(site_other == TRUE, 'Other', NA)))))))))))))))))))))),
+	treatment_str = ifelse(treatment_xrt == TRUE, 'Radiation Intervention',
+					ifelse(treatment_surg == TRUE, 'Surgical Intervention',
+					ifelse(treatment_invasive == TRUE, 'Invasive Intervention',
+					ifelse(treatment_medicine == TRUE, 'Medical Intervention',
+					ifelse(treatment_other == TRUE, 'Other Intervention', NA)))))
 	) %>% 
 	select(location_str, treatment_str) %>%
 	mutate(treatment_str=as.factor(treatment_str)) %>%
 	mutate(location_str=as.factor(location_str)) %>%
 	filter(!is.na(location_str)) %>% 
 	filter(!is.na(treatment_str)) %>% 
-	filter(treatment_str %in% c('treatment_xrt', 'treatment_surg', 'treatment_invasive')) %>%
+	filter(treatment_str %in% c('Medical Intervention', 'Surgical Intervention', 'Radiation Intervention')) %>%
 	group_by(treatment_str, location_str) %>%
     summarise(count=n())
 
 
 bar_graph_rollup %>%
   ggplot( aes(x=location_str, y=count, fill=treatment_str)) +
-    geom_bar(stat="identity", position="dodge") +
+    geom_bar(stat="identity", position="stack") +
     scale_fill_viridis(discrete=TRUE, name="") +
     theme_ipsum() +
-    ylab("Number of baby") +
+    ylab("") +
+    xlab("Malignancy Site") +
     theme(axis.text.x = element_text(angle=90, hjust=1))
