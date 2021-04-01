@@ -5,7 +5,7 @@ full_comparison_df <-
   filter(study_first_submitted_date < ymd('20200101')) %>%
   filter(nct_id %nin% (full_gi_df %>% pull(nct_id)))
 
-full_gi_df <- full_onc_df
+full_gi_df <- surg_onc_df
 fgi_df <- 
   full_gi_df %>%
   bpivotwider_single_factor_to_logical(column = 'industry_any2b', add_prefix = 'funding2b', makenames = TRUE) %>%
@@ -57,7 +57,7 @@ gg_fig_1a_yearlytotal_gi_global <-
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank(),
         axis.title.y = element_text(margin = margin(t=0, r = 10, b = 0, l = 0))) + 
-  labs(x = 'Year of Trial Submission', y = '\nNew GI\nTrials Per Year');
+  labs(x = 'Year of Trial Submission', y = '\nNew Clinical\nTrials Per Year');
 
 
 
@@ -88,7 +88,7 @@ gg_fig_1c_yearlypct_gi_combined_global <-
                      expand = c(0.01,0), # this makes the x-axis start close to y=0
                      # labels = scales::percent # not using this one because of width padding
                      labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0)) + 
-  coord_cartesian(ylim = c(0, .20)) + 
+  coord_cartesian(ylim = c(0, .01)) + 
   theme_bw() +
   theme(panel.grid.major.x = element_blank(), # remove vertical gridlines
         panel.grid.minor.x = element_blank(),
@@ -134,7 +134,7 @@ gg_fig_1d_yearly_sponsor_gi_pct_global <-
                      expand = c(0.01,0), # this makes the x-axis start close to y=0
                      # labels = scales::percent # not using this one because of width padding
                      labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0)) + 
-  coord_cartesian(ylim = c(0, .8)) + 
+  coord_cartesian(ylim = c(0, 1.0)) + 
   theme_bw() +
   theme(panel.grid.major.x = element_blank(), # remove vertical gridlines
         panel.grid.minor.x = element_blank(),
@@ -165,7 +165,7 @@ fig_df_1b_yearly_enrollment_gi_global <-
 gg_fig_1b_yearly_enrollment_gi_global <- 
   ggplot(data = fig_df_1b_yearly_enrollment_gi_global %>% filter(year_trial > 2007, year_trial < 2020),
          aes(x = factor(year_trial), y = cap_enroll_2000)) + 
-  geom_jitter(alpha = 0.04, color = color1, width = 0.1, size = 3) +
+  geom_jitter(alpha = 0.3, color = color1, width = 0.1, size = 3) +
   geom_boxplot(outlier.colour = NA, 
                alpha = 0,
                coef = 0, 
@@ -195,6 +195,6 @@ gg_fig_1_4pane_gi_global_c <- ggpubr::ggarrange(gg_fig_1a_yearlytotal_gi_global,
                                                    nrow = 4, ncol = 1,
                                                    heights = c(2, 1, 2, 2),
                                                    labels = c('A', 'B', 'C', 'D')) %>%
-annotate_figure(top= text_grob('Characteristics of GI Trials Over Time', face = 'bold'))
+annotate_figure(top= text_grob('Characteristics of Surgical Oncology Trials Over Time', face = 'bold'))
 
 gg_fig_1_4pane_gi_global_c
