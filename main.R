@@ -2,7 +2,7 @@ set.seed(5)
 libraries <- c(
   'zip', 'DescTools', 'svMisc', 'ggpubr', 'Hmisc', 'mice', 'glmnet', 
   'tidyverse', 'RefManageR', 'DT', 'lubridate', 'ggplot2', 
-  'survminer', 'Kendall', 'coin', 'dplyr', 'viridis'
+  'survminer', 'Kendall', 'coin', 'dplyr', 'viridis', 'hrbrthemes'
 )
 
 # MD5SUMs of input data:
