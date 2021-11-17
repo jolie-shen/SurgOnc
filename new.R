@@ -843,7 +843,7 @@ micedata <- joined_df %>%
 # is, "the number of imputations should be similar to the percentage of 
 # cases that are incomplete." Given the computational expense and the above
 # literature, plus the small amount of missing data, a value of 10 seems valid
-num_imputations <- 2
+num_imputations <- 10
 
 # Royston and White (2011) and Van Buuren et al. (1999) have all suggested
 # that more than 10 cycles are needed for the convergence of the sampling
@@ -854,7 +854,7 @@ num_imputations <- 2
 # we ran the well-known method described in "MICE in R" from the Journal of 
 # Statistical Software (2011), and found good convergence using just 10 
 # iterations. As a precaution, I've upped this to 20.
-iterations <- 2
+iterations <- 20
 
 # Simply just set up the methods and predictor matrices, as suggested in Heymans and Eekhout's "Applied Missing Data Analysis"
 init <- mice(micedata, maxit = 0, m = 1) 
@@ -1262,9 +1262,68 @@ do_logistic <- function(output_variable, imputed) {
 
   return(ret)
 }
+                 
+do_logistic_only_surg <- function(output_variable, imputed) {
+  fmla <- as.formula(paste0(output_variable, " ~ 
+    industry_any2b +
+    br_phase4_ref_ph3 +
+    new_enroll +
+    br_masking2  +
+    br_allocation +
+    has_dmc +
+    new_num_facilities +
+    treatment_xrt +
+    treatment_medicine +
+    treatment_other +
+    behavior_uncertain +
+    behavior_malignant +
+    behavior_metastatic +
+    site_lung +
+    site_heme +
+    site_thyroid +
+    site_colorectal +
+    site_stomach +
+    site_pancreas +
+    site_breast +
+    site_cervix +
+    site_ovary +
+    site_prostate +
+    site_kidney +
+    site_bladder +
+    site_other"))
+
+  output <- imputed %>% 
+    mice::complete("all") %>%
+    lapply(function(i) {
+      add_additional_columns(i, TRUE) %>% 
+        filter(br_trialduration > 0 & treatment_surg == TRUE) %>%
+        filter(!is.na(!! rlang::sym(output_variable))) %>%
+        filter(behavior_benign + behavior_uncertain + behavior_insitu + behavior_malignant + behavior_metastatic == 1)
+    }) %>%
+    lapply(glm, formula = fmla, family = binomial(link = logit)) %>%
+    pool()
+
+  summ <- summary(output, conf.int = TRUE, exponentiate = TRUE)
+  ret <- do.call(rbind, lapply(seq(length(summ$term)), function(i) {
+    data.frame(
+        variable = summ$term[i],
+        aOR = round(summ$estimate[i], 3),
+        low_ci = round(summ$`2.5`[i], 3),
+        hi_ci = round(summ$`97.5`[i], 3),
+        p_val = format_p_val(summ$p.value[i])
+    )
+  }))
+
+  return(ret)
+}
+
+# Calculates the same logistic regression, but only on treatment_surg = TRUE
+results_reported_only_surg <- do_logistic_only_surg("br_were_results_reported_within_1year", imputed)
 
 results_reported_full <- do_logistic("br_were_results_reported_within_1year", imputed)
 early_disc_full <- do_logistic("early_discontinuation_completed_vs_stoppedearly", imputed)
+                 
+        
      
 ###########
 
