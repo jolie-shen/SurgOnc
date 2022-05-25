@@ -5,7 +5,9 @@ full_comparison_df <-
   filter(study_first_submitted_date < ymd('20200101')) %>%
   filter(nct_id %nin% (full_gi_df %>% pull(nct_id)))
 
+#only include if you want surg on data
 full_gi_df <- surg_onc_df
+
 fgi_df <- 
   full_gi_df %>%
   bpivotwider_single_factor_to_logical(column = 'industry_any2b', add_prefix = 'funding2b', makenames = TRUE) %>%
@@ -36,6 +38,8 @@ comparison_trial_growth_statistics_global <- comparison_trial_growth_global[["St
 
 color1 <- '#981B1E'# looks similar to crimson and firebrick, but I think this is JAMA gi header?
 
+
+####PANEL A####
 fig_df_1a_yearly_gi_global <- gi_trial_growth_data_global %>% select(year_trial, total_trials_all)
 max_yearly_gi_global <- max(fig_df_1a_yearly_gi_global$total_trials_all)
 gg_fig_1a_yearlytotal_gi_global <-
@@ -60,7 +64,7 @@ gg_fig_1a_yearlytotal_gi_global <-
   labs(x = 'Year of Trial Submission', y = '\nNew Clinical\nTrials Per Year');
 
 
-
+#### PANEL B ####
 fig_df_1c_yearly_gi_pct_all_global <- 
   left_join(gi_trial_growth_data_global %>% select(year_trial, total_trials_all),
             comparison_trial_growth_data_global %>% select(year_trial, total_trials_all),
@@ -104,6 +108,7 @@ gg_fig_1c_yearlypct_gi_combined_global <-
        y = '\nProportion of All\nClinical Trials');
 
 
+#### PANEL C ####
 fig_df_1d_yearly_sponsor_gi_global <- 
   gi_trial_growth_data_global %>%
   select(year_trial, total_trials_all, total_trials_sponsor, starts_with('funding2b')) 
@@ -150,7 +155,7 @@ gg_fig_1d_yearly_sponsor_gi_pct_global <-
   scale_color_manual(values = g_industry_color5) + 
   scale_fill_manual(values = g_industry_color5); 
 
-
+#### PANEL D ####
 fig_df_1b_yearly_enrollment_gi_global <-
   full_gi_df %>%
   mutate(year_trial = year(study_first_submitted_date)) %>%
