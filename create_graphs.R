@@ -53,7 +53,8 @@ gg_fig_1a_yearlytotal_gi_global <-
             vjust = -0.5) + 
   scale_x_continuous(breaks = c(2008:2020)) + 
   scale_y_continuous(breaks = seq(0, max_yearly_gi_global *1.5, roundUpNice(max_yearly_gi_global/8, nice = c(1,5,10))),
-                     labels = function(label) bpadding(label, width = 4, makepercent = FALSE, num_decimals = 0)) +
+                     labels = function(label) bpadding(label, width = 4, makepercent = FALSE, num_decimals = 0),
+                     sec.axis= dup_axis()) +
   coord_cartesian(ylim = c(0, pretty(max_yearly_gi_global*9/8)[2])) + 
   theme_bw() +
   theme(panel.grid.major.x = element_blank(), # remove vertical gridlines
@@ -91,7 +92,8 @@ gg_fig_1c_yearlypct_gi_combined_global <-
   scale_y_continuous(breaks = seq(0, 1, 0.04),
                      expand = c(0.01,0), # this makes the x-axis start close to y=0
                      # labels = scales::percent # not using this one because of width padding
-                     labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0)) + 
+                     labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0),
+                       sec.axis = dup_axis()) +  #adds dual y axis
   coord_cartesian(ylim = c(0, .01)) + 
   theme_bw() +
   theme(panel.grid.major.x = element_blank(), # remove vertical gridlines
@@ -138,7 +140,8 @@ gg_fig_1d_yearly_sponsor_gi_pct_global <-
   scale_y_continuous(breaks = seq(0, 1, 0.1),
                      expand = c(0.01,0), # this makes the x-axis start close to y=0
                      # labels = scales::percent # not using this one because of width padding
-                     labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0)) + 
+                     labels = function(label) bpadding(label, width = 4, makepercent = TRUE, num_decimals = 0),
+                      sec.axis = dup_axis()) + 
   coord_cartesian(ylim = c(0, 1.0)) + 
   theme_bw() +
   theme(panel.grid.major.x = element_blank(), # remove vertical gridlines
@@ -183,7 +186,8 @@ gg_fig_1b_yearly_enrollment_gi_global <-
   # scale_y_continuous(breaks = c(seq(0, 500, 100)), limits = c(0, 500)) + # this removes data! use coord_cartesian to set limits
   # see here for padding labels: https://stackoverflow.com/questions/34677551/is-it-possible-to-fix-axis-margin-with-ggplot2
   scale_y_continuous(breaks = c(seq(0, 500, 50)),
-                     labels = function(label) bpadding(label, width = 4, makepercent = FALSE, num_decimals = 0)
+                     labels = function(label) bpadding(label, width = 4, makepercent = FALSE, num_decimals = 0),
+                      sec.axis = dup_axis()
                      # labels = function(label) sprintf('%5.0f', label) # width = 4, decimals = 0, padding = space
   ) + 
   coord_cartesian(ylim = c(0, 500)) + 
